@@ -1,6 +1,6 @@
 # LogSentinel
 
-Herramienta de línea de comandos que analiza logs de **SSH** (`auth.log`) y de **servidores web** (nginx / Apache), detecta ataques habituales, los relaciona con técnicas de **MITRE ATT&CK** y genera un informe en terminal, JSON o HTML. También puede enviar los hallazgos a un **webhook** (por ejemplo, un flujo de n8n que avise por Telegram o correo).
+Herramienta de línea de comandos que analiza logs de **SSH** (`auth.log`) y de **servidores web** (nginx / Apache), detecta ataques habituales, los relaciona con técnicas de **MITRE ATT&CK** y genera un informe en terminal, JSON o HTML. El informe HTML está pensado para que lo entienda cualquiera: veredicto general, cronología del ataque y, en cada hallazgo, qué significa y qué hacer. También puede enviar los hallazgos a un **webhook** (por ejemplo, un flujo de n8n que avise por Telegram o correo).
 
 Escrita en TypeScript sobre Node.js, **sin dependencias externas**.
 
