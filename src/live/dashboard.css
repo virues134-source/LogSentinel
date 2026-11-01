@@ -34,12 +34,12 @@ h1 .surface{font-weight:400;color:var(--ink-2)}
 
 /* Nivel de amenaza: siempre visible, cambia con la alerta más grave */
 .threat{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;margin-top:14px;padding:12px 18px;background:var(--t-bg);color:var(--t-ink);transition:background-color .4s ease,color .4s ease}
-.threat[data-level=none]{--t-bg:var(--calm-tint);--t-ink:var(--calm)}
+.threat[data-level=none]{--t-bg:var(--calm-tint);--t-ink:#245446}
 .threat[data-level=low]{--t-bg:var(--low-tint);--t-ink:var(--low)}
 .threat[data-level=medium]{--t-bg:var(--med-tint);--t-ink:var(--med)}
 .threat[data-level=high]{--t-bg:var(--high);--t-ink:#fff}
 .threat[data-level=critical]{--t-bg:var(--crit);--t-ink:#fff}
-.threat .label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.threat .label{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .threat .level{font-size:20px;font-weight:800;letter-spacing:-.01em}
 .threat .why{font-size:14px}
 .threat .meter{display:flex;gap:3px}
@@ -64,6 +64,8 @@ h1 .surface{font-weight:400;color:var(--ink-2)}
 .breaking.show{display:flex}
 .breaking .kicker{font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding-right:14px;border-right:1px solid rgba(255,255,255,.4)}
 .breaking.done{background:var(--calm)}
+.breaking-action{margin-left:auto;font:600 13px/1 var(--sans);color:#fff;background:transparent;border:1px solid rgba(255,255,255,.6);padding:7px 12px;cursor:pointer}
+.breaking-action:hover{background:rgba(255,255,255,.15)}
 
 /* Explicación para quien no conoce la herramienta */
 .explainer{margin-top:18px;background:var(--paper-2);border-top:1px solid var(--rule)}
@@ -150,7 +152,7 @@ table{width:100%;border-collapse:collapse}
 .tryit a,.tryit button.link{font-family:var(--mono);font-size:12.5px;color:var(--low);text-underline-offset:3px;word-break:break-all;background:none;border:0;padding:0;text-align:left;cursor:pointer;text-decoration:underline}
 
 /* Aviso antes de simular */
-dialog.confirm{max-width:560px;width:calc(100% - 32px);padding:0;border:0;background:var(--paper);color:var(--ink);box-shadow:0 24px 60px rgba(29,25,22,.28)}
+dialog.confirm{max-width:560px;width:calc(100% - 32px);padding:0;border:0;border-top:4px solid var(--strong);background:var(--paper);color:var(--ink);box-shadow:0 24px 60px rgba(29,25,22,.28)}
 dialog.confirm::backdrop{background:rgba(29,25,22,.45)}
 dialog.confirm[open]{animation:pop .22s var(--ease)}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
@@ -167,5 +169,5 @@ dialog.confirm[open]{animation:pop .22s var(--ease)}
 .legal a{color:var(--ink-2)}
 
 @media (max-width:1000px){.columns,.explainer-body,.tryit{grid-template-columns:1fr}.index b{font-size:24px}.index small{display:none}}
-@media (max-width:640px){.page{padding:0 16px 40px}.masthead{grid-template-columns:1fr}.actions{justify-content:flex-start}.indices{grid-template-columns:repeat(2,1fr)}.index,.index+.index{padding:12px 0;border-left:0;border-bottom:1px solid var(--rule)}.steps,.tryit ul{grid-template-columns:1fr}.tape col.c-ip{width:104px}.threat{grid-template-columns:1fr}.threat .meter{display:none}}
+@media (max-width:640px){.page{padding:0 16px 40px}.masthead{grid-template-columns:1fr}.actions{justify-content:flex-start}.indices{grid-template-columns:repeat(2,1fr)}.index,.index+.index{padding:12px 0;border-left:0;border-bottom:1px solid var(--rule)}.steps,.tryit ul{grid-template-columns:1fr}.tape col.c-flag{width:16px}.tape col.c-time{width:66px}.tape col.c-ip{width:92px}.tape col.c-status{width:66px}.tape td,.tape th{padding-left:6px;padding-right:6px}.panel{min-height:0}.threat{grid-template-columns:1fr}.threat .meter{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}

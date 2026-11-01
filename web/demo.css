@@ -13,9 +13,25 @@
 .go{height:34px;padding:0 14px;font:600 13px/1 var(--sans);background:var(--ink);color:var(--paper);border:0;cursor:pointer}
 .browser iframe{flex:1;width:100%;border:0;background:#f1efe9}
 .demo-panel{height:620px}
-.notice ul{margin:14px 0 4px;padding:0;list-style:none}
-.notice li{padding:9px 0;border-top:1px solid var(--rule);font-size:14px;color:var(--ink-2)}
-.notice li b{color:var(--ink)}
+/* Aviso inicial: informativo, sin tono de alarma */
+dialog.notice{max-width:620px;width:calc(100% - 32px);padding:0;border:0;border-top:4px solid var(--strong);background:var(--paper);color:var(--ink);box-shadow:0 24px 60px rgba(29,25,22,.25)}
+dialog.notice::backdrop{background:rgba(29,25,22,.4)}
+dialog.notice[open]{animation:pop .22s var(--ease)}
+.notice-head{padding:26px 28px 18px}
+.notice-head h2{font-size:24px;letter-spacing:-.02em}
+.notice-head p{margin-top:6px;font-size:15px;color:var(--ink-2);max-width:48ch}
+.notice-points{display:grid;grid-template-columns:1fr 1fr;margin:0 28px;border-top:1px solid var(--rule)}
+.notice-points div{padding:14px 18px 14px 0;border-bottom:1px solid var(--rule)}
+.notice-points div:nth-child(even){padding:14px 0 14px 18px;border-left:1px solid var(--rule)}
+.notice-points dt{font-size:13px;font-weight:700}
+.notice-points dd{margin-top:3px;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+.notice-actions{display:flex;justify-content:flex-end;padding:18px 28px 24px}
+/* Botón de confirmar neutro: verde al pasar por encima, como un "OK" */
+.btn.ok{border-color:var(--ink);background:transparent;color:var(--ink);min-width:132px;justify-content:center}
+.btn.ok:focus-visible{outline:2px solid var(--calm);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){.btn.ok:hover{background:var(--calm);border-color:var(--calm);color:#fff}}
+.btn.ok:active{background:var(--calm);border-color:var(--calm);color:#fff}
+@media (max-width:560px){.notice-points{grid-template-columns:1fr}.notice-points div,.notice-points div:nth-child(even){padding:12px 0;border-left:0}}
 .tape-section{margin-top:36px}
-@media (max-width:1000px){.demo-grid{grid-template-columns:1fr}.browser{height:560px}.demo-panel{height:auto;max-height:520px}}
+@media (max-width:1000px){.demo-grid{grid-template-columns:1fr}.browser{height:560px}.demo-panel{height:auto;min-height:0;max-height:520px}}
 @media (max-width:640px){.address .host{display:none}.browser{height:520px}}

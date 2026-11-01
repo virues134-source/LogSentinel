@@ -139,8 +139,12 @@ async function simulate() {
     } finally {
         simulating = false;
         dashboard.handle({ type: 'simulation', state: 'done' });
+        document.getElementById('restart').hidden = false;
     }
 }
+
+// Volver a empezar con la tienda y el log limpios (útil para repetir la demo o grabarla).
+document.getElementById('restart').addEventListener('click', () => location.reload());
 
 /* ---------- Informe ---------- */
 

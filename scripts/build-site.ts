@@ -34,6 +34,8 @@ const STATIC: Record<string, string> = {
     'web/index.html': 'index.html',
     'web/demo.js': 'demo.js',
     'web/demo.css': 'demo.css',
+    'web/favicon.svg': 'favicon.svg',
+    'docs/demo.png': 'og-image.png',
     'src/live/dashboard.css': 'dashboard.css',
     'src/live/dashboard-ui.js': 'dashboard-ui.js',
 };
