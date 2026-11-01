@@ -5,72 +5,151 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LogSentinel · Monitor en directo</title>
 <style>
-:root{--bg:#f4f5f3;--card:#fff;--ink:#14171a;--ink2:#4f5660;--ink3:#7b828b;--rule:#dfe2de;--crit:#a3161a;--high:#c2410c;--high-bg:#fdf0e7;--med:#9a6700;--med-bg:#fbf4e1;--low:#0b6e8a;--low-bg:#e6f3f7;--ok:#1d6b45;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace;--ease:cubic-bezier(.23,1,.32,1)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
-h1,h2,h3,p{margin:0}a{color:inherit}code{font-family:var(--mono);font-size:.86em}
-.wrap{max-width:1360px;margin:0 auto;padding:0 24px}
-header{border-bottom:1.5px solid var(--ink);padding:28px 0 18px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
-.brand{font:700 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);margin-bottom:8px}
-h1{font-size:28px;letter-spacing:-.02em}
-.watching{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;color:var(--ink2)}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(29,107,69,.5);animation:pulse 2s infinite}
-.dot.off{background:var(--ink3);animation:none}
-@keyframes pulse{70%{box-shadow:0 0 0 8px rgba(29,107,69,0)}100%{box-shadow:0 0 0 0 rgba(29,107,69,0)}}
-.actions{display:flex;gap:10px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;min-height:42px;padding:0 18px;font:600 14px/1 inherit;border:1.5px solid var(--ink);background:none;color:var(--ink);text-decoration:none;cursor:pointer;transition:background-color .2s,color .2s,transform .16s var(--ease)}
-.btn:active{transform:scale(.97)}.btn:hover{background:var(--ink);color:#fff}
-.btn.primary{background:var(--crit);border-color:var(--crit);color:#fff}.btn.primary:hover{background:#7f1013}
-.btn[disabled]{opacity:.45;cursor:default;transform:none}
-.btn:focus-visible{outline:2px solid var(--low);outline-offset:2px}
-.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:20px}
-.stats div{background:var(--card);padding:12px 16px}
-.stats b{display:block;font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
-.stats span{font-size:12px;color:var(--ink2)}
-.stats [data-sev=critical] b{color:var(--crit)}.stats [data-sev=high] b{color:var(--high)}.stats [data-sev=medium] b{color:var(--med)}
-.phase{margin-top:16px;padding:12px 16px;background:var(--ink);color:#fff;font-size:14px;display:none;align-items:center;gap:12px}
-.phase.show{display:flex}.phase b{font-weight:600}.phase.done{background:var(--ok)}.phase.done .spinner{display:none}
-.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;flex:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:24px;margin-top:24px;align-items:start}
-h2{font-size:17px;display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:12px}
-h2 small{font-weight:400;font-size:12px;color:var(--ink3)}
-.feed{background:#14171a;color:#d7dbd8;font:12.5px/1.5 var(--mono);height:62vh;min-height:360px;overflow:auto;padding:8px 0}
-.feed .row{display:grid;grid-template-columns:64px 118px 1fr 40px;gap:10px;padding:2px 14px;white-space:nowrap}
-.feed .row.new{animation:flash 1.2s var(--ease)}
-.feed .row.hot{background:rgba(163,22,26,.28)}
-.feed .path{overflow:hidden;text-overflow:ellipsis}
-.feed .t{color:#7b828b}.feed .s2{color:#7fd19b}.feed .s3{color:#8cc4ff}.feed .s4{color:#ffcf70}.feed .s5{color:#ff8a8a}
-@keyframes flash{from{background:rgba(255,255,255,.14)}}
-.feed .empty,.alerts .empty{padding:16px;color:#7b828b;white-space:normal;font-family:inherit}
-.alerts{display:flex;flex-direction:column;gap:10px;height:62vh;min-height:360px;overflow:auto;padding-right:4px}
-.alert{background:var(--card);border:1px solid var(--rule);border-top:3px solid var(--c);padding:14px 16px;animation:enter .45s var(--ease) both}
-.alert[data-sev=critical]{--c:var(--crit)}.alert[data-sev=high]{--c:var(--high)}.alert[data-sev=medium]{--c:var(--med)}.alert[data-sev=low]{--c:var(--low)}
-.alert .head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.alert h3{font-size:15px}
-.alert p{font-size:13.5px;color:var(--ink2);margin-top:6px}
-.alert .meta{font:12px var(--mono);color:var(--ink3);margin-top:8px}
-.tag{font:700 11px/1 var(--mono);color:var(--crit);letter-spacing:.04em;text-transform:uppercase}
-.tag.muted{color:var(--ink3)}.alert.superseded{opacity:.55}
-@keyframes enter{from{opacity:0;transform:translateY(-8px);filter:blur(3px)}}
-.pill{display:inline-block;min-width:58px;text-align:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:2px}
-[data-sev=critical]>.head .pill,.pill[data-sev=critical]{background:var(--crit);color:#fff}
-.pill[data-sev=high]{background:var(--high-bg);color:var(--high)}.pill[data-sev=medium]{background:var(--med-bg);color:var(--med)}.pill[data-sev=low]{background:var(--low-bg);color:var(--low)}
-.tryit{margin:28px 0 48px;padding:18px 20px;background:var(--card);border:1px solid var(--rule)}
-.tryit h2{border:0;padding:0;margin-bottom:8px}
-.tryit p{color:var(--ink2);font-size:14px}
-.tryit ul{margin:10px 0 0;padding-left:18px;font-size:14px}.tryit li{margin:4px 0}
-.tryit a{color:var(--low)}
-@media (max-width:900px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:root{
+  --paper:#fbede1;--paper-2:#f6e1d0;--ink:#1d1916;--ink-2:#5b4e45;--ink-3:#6f6157;--rule:#e2c9b5;--rule-strong:#1d1916;
+  --crit:#8f1d3f;--crit-tint:#f3d5d6;--high:#b54a14;--high-tint:#f7dcc8;--med:#8a6200;--med-tint:#f4e4bf;--low:#25657a;--low-tint:#d9e6e6;--calm:#2f6b5a;
+  --sans:"Segoe UI Variable Text","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+  --ease:cubic-bezier(.23,1,.32,1);
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+::selection{background:var(--ink);color:var(--paper)}
+h1,h2,h3,p,ol,ul,dl,dd{margin:0}ul,ol{padding:0;list-style:none}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--low);outline-offset:2px}
+.page{max-width:1400px;margin:0 auto;padding:0 28px 56px}
+
+/* Cabecera tipo cabecera de periódico */
+.masthead{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px;padding:22px 0 14px;border-bottom:3px solid var(--rule-strong)}
+h1{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;font-size:30px;line-height:1.1;font-weight:700;letter-spacing:-.02em}
+.wordmark{font-weight:800;letter-spacing:-.03em}
+.wordmark span{color:var(--crit)}
+h1 .surface{font-weight:400;color:var(--ink-2)}
+.dateline{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--ink-2)}
+.live{display:inline-flex;align-items:center;gap:7px;font-weight:700;color:var(--crit);letter-spacing:.06em;text-transform:uppercase;font-size:11px}
+.live i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.live.off{color:var(--ink-3)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;font:600 14px/1 var(--sans);color:var(--ink);background:transparent;border:1px solid var(--ink);text-decoration:none;cursor:pointer;transition:background-color .18s ease,color .18s ease,transform .16s var(--ease)}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--crit);border-color:var(--crit);color:#fff}
+.btn[disabled]{background:var(--paper-2);border-color:var(--rule);color:var(--ink-3);cursor:default;transform:none}
+@media (hover:hover) and (pointer:fine){.btn:hover{background:var(--ink);color:var(--paper)}.btn.primary:hover{background:#6f1530;border-color:#6f1530;color:#fff}.btn[disabled]:hover{background:var(--paper-2);color:var(--ink-3)}}
+
+/* Fila de índices */
+.indices{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-bottom:1px solid var(--rule)}
+.index{padding:14px 18px 14px 0}
+.index+.index{padding-left:18px;border-left:1px solid var(--rule)}
+.index dt{font-size:12px;font-weight:600;color:var(--ink-2)}
+.index dd{display:flex;align-items:baseline;gap:10px;margin-top:2px}
+.index b{font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.index small{font-size:12px;font-weight:600;color:var(--ink-3)}
+.index small.up{color:var(--crit)}
+.index[data-sev=critical] b{color:var(--crit)}.index[data-sev=high] b{color:var(--high)}.index[data-sev=medium] b{color:var(--med)}
+
+/* Última hora */
+.breaking{display:none;align-items:center;gap:14px;margin-top:18px;padding:10px 16px;background:var(--crit);color:#fff;font-size:14px}
+.breaking.show{display:flex}
+.breaking .kicker{font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding-right:14px;border-right:1px solid rgba(255,255,255,.4)}
+.breaking.done{background:var(--calm)}
+
+/* Explicación */
+.explainer{margin-top:18px;background:var(--paper-2);border-top:1px solid var(--rule)}
+.explainer summary{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 18px;cursor:pointer;font-weight:700;font-size:15px;list-style:none}
+.explainer summary::-webkit-details-marker{display:none}
+.explainer summary::after{content:"Mostrar";font-weight:600;font-size:12px;color:var(--ink-2)}
+.explainer[open] summary::after{content:"Ocultar"}
+.explainer-body{display:grid;grid-template-columns:1.1fr 2fr;gap:32px;padding:4px 18px 20px}
+.explainer-body>p{font-size:15px;line-height:1.6;color:var(--ink)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:step}
+.steps li{counter-increment:step;font-size:14px;line-height:1.55;color:var(--ink-2)}
+.steps li::before{content:counter(step);display:block;font-weight:800;font-size:22px;color:var(--ink);margin-bottom:4px}
+.steps b{color:var(--ink)}
+
+/* Cuerpo */
+.columns{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:32px;margin-top:28px}
+.col-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:8px;border-bottom:3px solid var(--rule-strong)}
+h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.col-head p{font-size:12px;color:var(--ink-3)}
+
+/* Cinta de actividad: columnas fijas, solo cambian las filas */
+.tape-wrap{height:64vh;min-height:380px;overflow:auto;border-bottom:1px solid var(--rule);scrollbar-color:var(--rule) transparent}
+table{width:100%;border-collapse:collapse}
+.tape{table-layout:fixed;font-size:13px}
+.tape th{position:sticky;top:0;z-index:1;background:var(--paper);text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:8px 10px;border-bottom:1px solid var(--rule)}
+.tape td{padding:6px 10px;border-bottom:1px solid var(--rule);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tape col.c-flag{width:22px}.tape col.c-time{width:82px}.tape col.c-ip{width:128px}.tape col.c-status{width:64px}
+.tape .req{font-family:var(--mono);font-size:12.5px}
+.tape .method{color:var(--ink-3);margin-right:6px}
+.tape .status{text-align:right;font-weight:700}
+.st-2{color:var(--calm)}.st-3{color:var(--low)}.st-4{color:var(--high)}.st-5{color:var(--crit)}
+.tape td.flag{padding-right:0}
+.flag i{display:block;width:8px;height:8px;border-radius:50%;background:transparent}
+.tape tr.hot .flag i{background:var(--crit)}
+.tape tr.hot td{background:rgba(143,29,63,.06)}
+.tape tr.fresh td{animation:fresh 1.4s var(--ease)}
+@keyframes fresh{from{background:rgba(29,25,22,.09)}}
+.raw{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.empty-state{padding:28px 4px;color:var(--ink-2);font-size:14px;max-width:46ch}
+.empty-state b{display:block;color:var(--ink);font-size:15px;margin-bottom:4px}
+
+/* Columna derecha con pestañas */
+.tabs{display:flex;gap:0}
+.tab{font:700 14px/1 var(--sans);color:var(--ink-3);background:none;border:0;padding:0 16px 0 0;cursor:pointer}
+.tab+.tab{padding-left:16px;border-left:1px solid var(--rule)}
+.tab[aria-selected=true]{color:var(--ink)}
+.tab span{font-weight:600;margin-left:4px}
+.panel{height:64vh;min-height:380px;overflow:auto;scrollbar-color:var(--rule) transparent}
+.panel[hidden]{display:none}
+
+/* Alertas como noticias */
+.story{padding:16px 0;border-bottom:1px solid var(--rule);animation:enter .4s var(--ease) both}
+.story-meta{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-3)}
+.sev{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.sev[data-sev=critical]{color:var(--crit)}.sev[data-sev=high]{color:var(--high)}.sev[data-sev=medium]{color:var(--med)}.sev[data-sev=low]{color:var(--low)}
+.story h3{font-size:17px;line-height:1.3;font-weight:700;letter-spacing:-.01em;margin-top:4px}
+.story[data-sev=critical] h3{font-size:19px}
+.story .standfirst{font-size:14px;color:var(--ink);margin-top:6px}
+.story .meaning{font-size:13.5px;color:var(--ink-2);margin-top:6px}
+.story .source{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:8px}
+.story.superseded{opacity:.5}
+.stamp{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);border:1px solid currentColor;padding:1px 5px}
+.stamp.up{color:var(--crit)}
+@keyframes enter{from{opacity:0;transform:translateY(-6px)}}
+
+/* IPs */
+.ips{font-size:13.5px}
+.ips th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);padding:10px 8px 8px 0;border-bottom:1px solid var(--rule)}
+.ips td{padding:9px 8px 9px 0;border-bottom:1px solid var(--rule);vertical-align:baseline}
+.ips .num{text-align:right}
+.ips code{font-family:var(--mono);font-size:12.5px}
+.ips .rules{font-size:12px;color:var(--ink-3)}
+
+/* Pruébalo */
+.tryit{display:grid;grid-template-columns:1fr 2fr;gap:32px;margin-top:36px;padding-top:16px;border-top:3px solid var(--rule-strong)}
+.tryit p{font-size:14px;color:var(--ink-2);margin-top:6px}
+.tryit ul{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.tryit li{padding:10px 0;border-bottom:1px solid var(--rule);font-size:14px}
+.tryit li span{display:block;font-size:12px;font-weight:600;color:var(--ink-2)}
+.tryit a{font-family:var(--mono);font-size:12.5px;color:var(--low);text-underline-offset:3px;word-break:break-all}
+
+@media (max-width:1000px){.columns,.explainer-body,.tryit{grid-template-columns:1fr}.index b{font-size:24px}.index small{display:none}}
+@media (max-width:640px){.page{padding:0 16px 40px}.masthead{grid-template-columns:1fr}.actions{justify-content:flex-start}.indices{grid-template-columns:repeat(2,1fr)}.index,.index+.index{padding:12px 0;border-left:0;border-bottom:1px solid var(--rule)}.steps,.tryit ul{grid-template-columns:1fr}.tape col.c-ip{width:104px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
+<div class="page">
+  <header class="masthead">
     <div>
-      <p class="brand">LogSentinel</p>
-      <h1>Monitor en directo</h1>
-      <p class="watching"><span class="dot" id="dot"></span><span id="status">Conectando…</span></p>
+      <h1><span class="wordmark">Log<span>Sentinel</span></span><span class="surface">Monitor en directo</span></h1>
+      <p class="dateline">
+        <span class="live off" id="live"><i></i><span id="live-text">Conectando</span></span>
+        <span id="clock"></span>
+        <span id="source"></span>
+      </p>
     </div>
     <div class="actions">
       <a class="btn" id="shop" href="#" target="_blank" rel="noopener" hidden>Abrir la tienda</a>
@@ -79,30 +158,63 @@ h2 small{font-weight:400;font-size:12px;color:var(--ink3)}
     </div>
   </header>
 
-  <div class="stats">
-    <div><b id="c-events">0</b><span>Líneas analizadas</span></div>
-    <div><b id="c-alerts">0</b><span>Alertas</span></div>
-    <div data-sev="critical"><b id="c-critical">0</b><span>Críticas</span></div>
-    <div data-sev="high"><b id="c-high">0</b><span>Altas</span></div>
-    <div data-sev="medium"><b id="c-medium">0</b><span>Medias</span></div>
-  </div>
+  <dl class="indices">
+    <div class="index"><dt>Líneas analizadas</dt><dd><b id="c-events">0</b><small id="d-events"></small></dd></div>
+    <div class="index"><dt>Alertas</dt><dd><b id="c-alerts">0</b><small id="d-alerts"></small></dd></div>
+    <div class="index" data-sev="critical"><dt>Críticas</dt><dd><b id="c-critical">0</b></dd></div>
+    <div class="index" data-sev="high"><dt>Altas</dt><dd><b id="c-high">0</b></dd></div>
+    <div class="index" data-sev="medium"><dt>Medias</dt><dd><b id="c-medium">0</b></dd></div>
+  </dl>
 
-  <div class="phase" id="phase"><span class="spinner"></span><span id="phase-text"></span></div>
+  <div class="breaking" id="breaking" role="status"><span class="kicker" id="breaking-kicker">Simulación</span><span id="breaking-text"></span></div>
 
-  <div class="grid">
-    <section>
-      <h2>Tráfico en directo <small>Cada línea es una petición real escrita en el log</small></h2>
-      <div class="feed" id="feed" aria-live="off"><div class="empty">Esperando tráfico. Abre la tienda o pulsa «Simular ataque».</div></div>
+  <details class="explainer" id="explainer" open>
+    <summary>Qué es LogSentinel y cómo leer este panel</summary>
+    <div class="explainer-body">
+      <p>Todos los servidores apuntan en un fichero, llamado <b>log</b>, cada cosa que pasa: quién visita una página, quién intenta entrar, qué falla. LogSentinel lee ese fichero mientras se escribe y busca en él las huellas que dejan los ataques más habituales.</p>
+      <ol class="steps">
+        <li><b>La tienda escribe su log.</b> Cada visita a Café Aurora, una tienda ficticia, queda anotada en una línea. Esas líneas son la columna «Actividad».</li>
+        <li><b>LogSentinel las lee al momento.</b> Compara cada línea con reglas que reconocen ataques: probar contraseñas sin parar, meter código en la dirección web, buscar ficheros privados…</li>
+        <li><b>Si algo encaja, avisa.</b> La alerta aparece a la derecha con su gravedad y lo que significa. En «Ver informe» está el análisis completo con qué hacer en cada caso.</li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="columns">
+    <section aria-labelledby="tape-title">
+      <div class="col-head"><h2 id="tape-title">Actividad</h2><p>Cada fila es una línea real del log, la más reciente arriba</p></div>
+      <div class="tape-wrap" id="tape-wrap">
+        <table class="tape">
+          <colgroup><col class="c-flag"><col class="c-time"><col class="c-ip"><col class="c-req"><col class="c-status"></colgroup>
+          <thead><tr><th aria-label="Marcada"></th><th>Hora</th><th>IP</th><th>Petición</th><th class="status">Estado</th></tr></thead>
+          <tbody id="tape"></tbody>
+        </table>
+        <div class="empty-state" id="tape-empty"><b>Todavía no hay tráfico.</b>Abre la tienda en otra pestaña o pulsa «Simular ataque» y verás aparecer aquí cada visita.</div>
+      </div>
     </section>
-    <section>
-      <h2>Alertas <small>Lo que LogSentinel detecta, en el momento</small></h2>
-      <div class="alerts" id="alerts" aria-live="polite"><div class="empty">Sin alertas todavía.</div></div>
+
+    <section aria-label="Alertas e IPs">
+      <div class="col-head">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="tab-alerts" aria-selected="true" aria-controls="panel-alerts" type="button">Qué está pasando<span id="n-alerts">0</span></button>
+          <button class="tab" role="tab" id="tab-ips" aria-selected="false" aria-controls="panel-ips" type="button">IPs<span id="n-ips">0</span></button>
+        </div>
+      </div>
+      <div class="panel" id="panel-alerts" role="tabpanel" aria-labelledby="tab-alerts" aria-live="polite">
+        <div class="empty-state" id="alerts-empty"><b>Sin alertas.</b>Mientras el tráfico sea normal, esta columna se queda vacía. Cuando LogSentinel reconozca un ataque, lo explicará aquí.</div>
+      </div>
+      <div class="panel" id="panel-ips" role="tabpanel" aria-labelledby="tab-ips" hidden>
+        <table class="ips"><thead><tr><th>IP</th><th>Peor alerta</th><th class="num">Puntos</th><th>Reglas</th></tr></thead><tbody id="ips"></tbody></table>
+        <div class="empty-state" id="ips-empty"><b>Ninguna IP señalada.</b>Aquí aparecerán las direcciones con alertas, ordenadas por riesgo.</div>
+      </div>
     </section>
   </div>
 
   <section class="tryit" id="tryit" hidden>
-    <h2>Atácala tú mismo</h2>
-    <p>Abre estas direcciones en otra pestaña y mira cómo aparecen aquí. Todo ocurre dentro de tu ordenador.</p>
+    <div>
+      <h2>Atácala tú</h2>
+      <p>Abre cualquiera de estas direcciones en otra pestaña y vuelve aquí. Todo ocurre dentro de tu ordenador.</p>
+    </div>
     <ul id="tryit-list"></ul>
   </section>
 </div>

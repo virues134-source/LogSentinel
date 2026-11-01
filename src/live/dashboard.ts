@@ -6,9 +6,11 @@ import { renderHtml } from '../reporters/html.ts';
 import type { Report } from '../analyzer.ts';
 import type { Finding } from '../types.ts';
 import type { LiveLine, MonitorUpdate } from './monitor.ts';
+import { GUIDANCE } from '../guidance.ts';
 
-const PAGE = readFileSync(fileURLToPath(new URL('./dashboard.html', import.meta.url)), 'utf8');
-const SCRIPT = readFileSync(fileURLToPath(new URL('./dashboard.js', import.meta.url)), 'utf8');
+// Se leen en cada petición (son ficheros pequeños): así un cambio en el diseño
+// se ve recargando la página, sin reiniciar el servidor.
+const asset = (name: string) => readFileSync(fileURLToPath(new URL(`./${name}`, import.meta.url)), 'utf8');
 
 const SECURITY_HEADERS = {
     'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'",
@@ -47,12 +49,12 @@ export function startDashboard(options: DashboardOptions) {
 
         if (req.method === 'GET' && url.pathname === '/') {
             res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', ...SECURITY_HEADERS });
-            res.end(PAGE);
+            res.end(asset('dashboard.html'));
             return;
         }
         if (req.method === 'GET' && url.pathname === '/dashboard.js') {
             res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', ...SECURITY_HEADERS });
-            res.end(SCRIPT);
+            res.end(asset('dashboard.js'));
             return;
         }
         if (req.method === 'GET' && url.pathname === '/events') {
@@ -63,6 +65,7 @@ export function startDashboard(options: DashboardOptions) {
                 source: options.source,
                 shopUrl: options.shopUrl ?? null,
                 canSimulate: Boolean(options.onSimulate),
+                guidance: GUIDANCE,
                 simulating,
                 phase,
                 lines: recentLines,

@@ -3,12 +3,17 @@
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' };
-const MAX_ROWS = 300;
+const ORDER = { low: 1, medium: 2, high: 3, critical: 4 };
+const MAX_ROWS = 400;
+const WINDOW_MS = 5 * 60_000;
 
-const feed = $('feed');
-const alerts = $('alerts');
+const tape = $('tape');
+const panelAlerts = $('panel-alerts');
 const alertIps = new Set();
-let shownAlerts = new Map();
+const lineTimes = [];
+let stories = new Map();
+let guidance = {};
+let latestFindings = [];
 
 function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -17,186 +22,272 @@ function el(tag, className, text) {
     return node;
 }
 
-// Hora local del navegador (el log puede estar en UTC u otra zona horaria).
-function time(iso) {
-    return iso ? new Date(iso).toLocaleTimeString('es-ES', { hour12: false }) : '';
-}
-
-function statusClass(status) {
-    return status ? `s${String(status)[0]}` : '';
-}
-
-function addLines(lines, animate) {
-    if (!lines.length) return;
-    const empty = feed.querySelector('.empty');
-    if (empty) empty.remove();
-
-    const stick = feed.scrollTop < 8;
-    for (const line of lines) {
-        const row = el('div', 'row');
-        if (animate) row.classList.add('new');
-        if (line.ip && alertIps.has(line.ip)) row.classList.add('hot');
-        row.dataset.ip = line.ip || '';
-        if (line.method) {
-            row.append(
-                el('span', 't', time(line.time)),
-                el('span', '', line.ip),
-                el('span', 'path', `${line.method} ${line.path}`),
-                el('span', statusClass(line.status), String(line.status)),
-            );
-        } else {
-            const text = el('span', 'path', line.raw);
-            text.style.gridColumn = '1 / -1';
-            row.append(text);
-        }
-        feed.prepend(row);
-    }
-    while (feed.children.length > MAX_ROWS) feed.lastChild.remove();
-    if (stick) feed.scrollTop = 0;
-}
-
-function renderAlert(finding, kind) {
-    const card = el('article', 'alert');
-    card.dataset.sev = finding.severity;
-    const head = el('div', 'head');
-    const pill = el('span', 'pill', LABEL[finding.severity]);
-    pill.dataset.sev = finding.severity;
-    head.append(pill, el('h3', '', finding.title));
-    if (kind === 'escalated') head.append(el('span', 'tag', 'Ha subido de gravedad'));
-    const where = [finding.ip, finding.user ? `usuario ${finding.user}` : ''].filter(Boolean).join(' · ');
-    card.append(
-        head,
-        el('p', '', finding.description),
-        el('div', 'meta', `${time(finding.lastSeen)} · ${where} · ${finding.mitre.map((m) => m.id).join(', ')}`),
-    );
-    return card;
-}
-
+// Hora local del navegador (el log puede venir en otra zona horaria).
+const clockFormat = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+const time = (iso) => (iso ? clockFormat.format(new Date(iso)) : '');
 const keyOf = (f) => `${f.rule}|${f.ip || ''}|${f.user || ''}`;
 
-function showChanges(changes) {
-    if (!changes.length) return;
-    const empty = alerts.querySelector('.empty');
-    if (empty) empty.remove();
+/* ---------- Cinta de actividad ---------- */
 
-    for (const { kind, finding } of changes) {
-        const key = keyOf(finding);
-        const old = shownAlerts.get(key);
-        if (old) old.remove();
-        const card = renderAlert(finding, kind);
-        shownAlerts.set(key, card);
-        alerts.prepend(card);
-        if (finding.ip) markIp(finding.ip);
+function addLines(lines, fresh) {
+    if (!lines.length) return;
+    $('tape-empty').hidden = true;
+    const wrap = $('tape-wrap');
+    const atTop = wrap.scrollTop < 8;
+
+    for (const line of lines) {
+        lineTimes.push(Date.now());
+        const tr = document.createElement('tr');
+        tr.dataset.ip = line.ip || '';
+        if (fresh) tr.classList.add('fresh');
+        if (line.ip && alertIps.has(line.ip)) tr.classList.add('hot');
+
+        const flag = el('td', 'flag');
+        flag.append(el('i'));
+        if (line.method) {
+            const req = el('td', 'req');
+            req.append(el('span', 'method', line.method), line.path);
+            req.title = `${line.method} ${line.path}`;
+            tr.append(flag, el('td', '', time(line.time)), el('td', '', line.ip), req,
+                el('td', `status st-${String(line.status)[0]}`, String(line.status)));
+        } else {
+            const raw = el('td', 'raw', line.raw);
+            raw.colSpan = 4;
+            tr.append(flag, raw);
+        }
+        tape.prepend(tr);
     }
+    while (tape.children.length > MAX_ROWS) tape.lastChild.remove();
+    if (atTop) wrap.scrollTop = 0;
 }
 
 function markIp(ip) {
-    if (alertIps.has(ip)) return;
+    if (!ip || alertIps.has(ip)) return;
     alertIps.add(ip);
-    for (const row of feed.querySelectorAll('.row')) {
-        if (row.dataset.ip === ip) row.classList.add('hot');
+    for (const tr of tape.querySelectorAll('tr')) {
+        if (tr.dataset.ip === ip) tr.classList.add('hot');
     }
 }
 
-function updateCounts(findings, events) {
+/* ---------- Alertas como noticias ---------- */
+
+function renderStory(finding, kind) {
+    const story = el('article', 'story');
+    story.dataset.sev = finding.severity;
+
+    const meta = el('div', 'story-meta');
+    const sev = el('span', 'sev', LABEL[finding.severity]);
+    sev.dataset.sev = finding.severity;
+    meta.append(sev, el('span', '', time(finding.lastSeen)));
+    if (kind === 'escalated') meta.append(el('span', 'stamp up', 'Sube de gravedad'));
+
+    story.append(meta, el('h3', '', finding.title), el('p', 'standfirst', finding.description));
+    const guide = guidance[finding.rule];
+    if (guide) story.append(el('p', 'meaning', guide.meaning));
+    const where = [finding.ip, finding.user ? `usuario ${finding.user}` : '', finding.mitre.map((m) => m.id).join(' · ')].filter(Boolean);
+    story.append(el('p', 'source', where.join('   ')));
+    return story;
+}
+
+function showChanges(changes) {
+    if (!changes.length) return;
+    $('alerts-empty').hidden = true;
+    for (const { kind, finding } of changes) {
+        const key = keyOf(finding);
+        stories.get(key)?.remove();
+        const story = renderStory(finding, kind);
+        stories.set(key, story);
+        panelAlerts.prepend(story);
+        markIp(finding.ip);
+    }
+}
+
+/** Una alerta que deja de existir se ha convertido en otra más grave: se queda, sellada. */
+function stampSuperseded(findings) {
+    const current = new Set(findings.map(keyOf));
+    for (const [key, story] of stories) {
+        if (current.has(key) || story.classList.contains('superseded')) continue;
+        story.classList.add('superseded');
+        story.querySelector('.story-meta').append(el('span', 'stamp', 'Superada'));
+    }
+    for (const f of findings) {
+        const story = stories.get(keyOf(f));
+        if (story) story.querySelector('.standfirst').textContent = f.description;
+    }
+}
+
+/* ---------- IPs ---------- */
+
+function renderIps(findings) {
+    const byIp = new Map();
+    const weight = { low: 1, medium: 3, high: 7, critical: 10 };
+    for (const f of findings) {
+        if (!f.ip) continue;
+        const entry = byIp.get(f.ip) || { ip: f.ip, score: 0, worst: 'low', rules: new Set() };
+        entry.score += weight[f.severity];
+        if (ORDER[f.severity] > ORDER[entry.worst]) entry.worst = f.severity;
+        entry.rules.add(f.title);
+        byIp.set(f.ip, entry);
+    }
+    const rows = [...byIp.values()].sort((a, b) => b.score - a.score);
+    const body = $('ips');
+    body.replaceChildren(...rows.map((r) => {
+        const tr = document.createElement('tr');
+        const ip = el('td');
+        ip.append(el('code', '', r.ip));
+        const sev = el('td');
+        const tag = el('span', 'sev', LABEL[r.worst]);
+        tag.dataset.sev = r.worst;
+        sev.append(tag);
+        tr.append(ip, sev, el('td', 'num', String(r.score)), el('td', 'rules', [...r.rules].join(' · ')));
+        return tr;
+    }));
+    $('ips-empty').hidden = rows.length > 0;
+    $('n-ips').textContent = rows.length;
+}
+
+/* ---------- Índices ---------- */
+
+function updateIndices(findings, events) {
+    latestFindings = findings;
     $('c-events').textContent = events.toLocaleString('es-ES');
     $('c-alerts').textContent = findings.length;
+    $('n-alerts').textContent = findings.length;
     for (const sev of ['critical', 'high', 'medium']) {
         $(`c-${sev}`).textContent = findings.filter((f) => f.severity === sev).length;
     }
-    // Actualiza en sitio las tarjetas existentes (el recuento de eventos crece)
-    const current = new Set();
-    for (const f of findings) {
-        current.add(keyOf(f));
-        const card = shownAlerts.get(keyOf(f));
-        if (card) card.querySelector('p').textContent = f.description;
-    }
-    // Una alerta que ya no existe es porque se ha convertido en otra más grave
-    // (p. ej. "fuerza bruta" → "acceso tras múltiples fallos").
-    for (const [key, card] of shownAlerts) {
-        if (current.has(key) || card.classList.contains('superseded')) continue;
-        card.classList.add('superseded');
-        card.querySelector('.head').append(el('span', 'tag muted', 'Superada por una alerta más grave'));
-    }
+    refreshDeltas();
 }
 
+function refreshDeltas() {
+    const since = Date.now() - WINDOW_MS;
+    while (lineTimes.length && lineTimes[0] < since) lineTimes.shift();
+    const recentAlerts = latestFindings.filter((f) => new Date(f.firstSeen).getTime() >= since).length;
+    setDelta('d-events', lineTimes.length, false);
+    setDelta('d-alerts', recentAlerts, true);
+}
+
+function setDelta(id, value, alarming) {
+    const node = $(id);
+    node.textContent = value ? `+${value.toLocaleString('es-ES')} en 5 min` : '';
+    node.classList.toggle('up', alarming && value > 0);
+}
+
+/* ---------- Simulación y estado ---------- */
+
 function setPhase(text) {
-    $('phase-text').textContent = text;
-    $('phase').classList.toggle('show', Boolean(text));
+    $('breaking-text').textContent = text;
+    $('breaking').classList.toggle('show', Boolean(text));
 }
 
 function setSimulating(running) {
     const button = $('simulate');
     button.disabled = running;
     button.textContent = running ? 'Simulación en curso…' : 'Simular ataque';
-    $('phase').classList.toggle('done', !running);
+    $('breaking').classList.toggle('done', !running);
+    $('breaking-kicker').textContent = running ? 'Simulación' : 'Terminado';
+}
+
+function setLive(on, text) {
+    $('live').classList.toggle('off', !on);
+    $('live-text').textContent = text;
 }
 
 function setupTryIt(shopUrl) {
-    if (!shopUrl) return;
     const examples = [
-        ['Inyección SQL', "/productos?id=1' OR '1'='1"],
-        ['XSS en el buscador', '/buscar?q=<script>alert(1)</script>'],
+        ['Inyección SQL en un producto', "/productos?id=1' OR '1'='1"],
+        ['Código en el buscador (XSS)', '/buscar?q=<script>alert(1)</script>'],
         ['Leer ficheros del sistema', '/descargas?file=../../../etc/passwd'],
         ['Buscar el fichero de contraseñas', '/.env'],
     ];
-    const list = $('tryit-list');
-    for (const [label, path] of examples) {
+    $('tryit-list').replaceChildren(...examples.map(([label, path]) => {
         const li = el('li');
         const link = el('a', '', path);
         link.href = shopUrl + path;
         link.target = '_blank';
         link.rel = 'noopener';
-        li.append(`${label}: `, link);
-        list.append(li);
-    }
+        li.append(el('span', '', label), link);
+        return li;
+    }));
     $('tryit').hidden = false;
 }
 
+/* ---------- Pestañas ---------- */
+
+for (const tab of document.querySelectorAll('.tab')) {
+    tab.addEventListener('click', () => {
+        for (const other of document.querySelectorAll('.tab')) {
+            const selected = other === tab;
+            other.setAttribute('aria-selected', String(selected));
+            $(other.getAttribute('aria-controls')).hidden = !selected;
+        }
+    });
+}
+
+/* ---------- Explicación: se recuerda si el usuario la cerró ---------- */
+
+try {
+    if (localStorage.getItem('ls-explainer') === 'closed') $('explainer').open = false;
+    $('explainer').addEventListener('toggle', () => {
+        try { localStorage.setItem('ls-explainer', $('explainer').open ? 'open' : 'closed'); } catch {}
+    });
+} catch {}
+
+/* ---------- Reloj ---------- */
+
+const fullClock = new Intl.DateTimeFormat('es-ES', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+function tick() {
+    $('clock').textContent = fullClock.format(new Date());
+    refreshDeltas();
+}
+tick();
+setInterval(tick, 1000);
+
+/* ---------- Conexión en directo ---------- */
+
 function connect() {
     const source = new EventSource('/events');
-
-    source.onopen = () => {
-        $('dot').classList.remove('off');
-    };
+    source.onopen = () => setLive(true, 'En directo');
+    source.onerror = () => setLive(false, 'Reconectando');
 
     source.onmessage = (message) => {
         const data = JSON.parse(message.data);
 
         if (data.type === 'snapshot') {
-            $('status').textContent = `Vigilando ${data.source}`;
+            guidance = data.guidance || {};
+            $('source').textContent = `Vigilando ${data.source}`;
             if (data.shopUrl) {
                 $('shop').href = data.shopUrl;
                 $('shop').hidden = false;
                 setupTryIt(data.shopUrl);
             }
             $('simulate').hidden = !data.canSimulate;
-            feed.replaceChildren();
-            alerts.replaceChildren();
-            shownAlerts = new Map();
+
+            tape.replaceChildren();
+            for (const story of stories.values()) story.remove();
+            stories = new Map();
             alertIps.clear();
             data.findings.forEach((f) => f.ip && alertIps.add(f.ip));
+            $('tape-empty').hidden = data.lines.length > 0;
+            $('alerts-empty').hidden = data.findings.length > 0;
+
             addLines(data.lines, false);
             showChanges([...data.findings].reverse().map((finding) => ({ kind: 'new', finding })));
-            if (!data.lines.length) feed.append(el('div', 'empty', 'Esperando tráfico. Abre la tienda o pulsa «Simular ataque».'));
-            if (!data.findings.length) alerts.append(el('div', 'empty', 'Sin alertas todavía.'));
-            updateCounts(data.findings, data.events);
+            updateIndices(data.findings, data.events);
+            renderIps(data.findings);
             setSimulating(data.simulating);
             setPhase(data.phase);
         } else if (data.type === 'update') {
             addLines(data.lines, true);
             showChanges(data.changes);
-            updateCounts(data.findings, data.events);
+            stampSuperseded(data.findings);
+            updateIndices(data.findings, data.events);
+            renderIps(data.findings);
         } else if (data.type === 'phase') {
             setPhase(data.text);
         } else if (data.type === 'simulation') {
             setSimulating(data.state === 'running');
         }
-    };
-
-    source.onerror = () => {
-        $('dot').classList.add('off');
-        $('status').textContent = 'Conexión perdida, reintentando…';
     };
 }
 
