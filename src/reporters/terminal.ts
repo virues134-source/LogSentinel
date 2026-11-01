@@ -1,5 +1,6 @@
 import type { Report } from '../analyzer.ts';
 import type { Severity } from '../types.ts';
+import { formatDateTime, utcOffsetLabel } from '../time.ts';
 
 const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code: string, text: string) => (useColor ? `\x1b[${code}m${text}\x1b[0m` : text);
@@ -15,9 +16,7 @@ const label = (s: Severity) => paint(SEVERITY_STYLE[s], s.toUpperCase().padEnd(8
 const dim = (t: string) => paint('2', t);
 const bold = (t: string) => paint('1', t);
 
-function formatDate(date: Date): string {
-    return date.toISOString().replace('T', ' ').slice(0, 19);
-}
+const formatDate = formatDateTime;
 
 export function renderTerminal(report: Report): string {
     const out: string[] = [];
@@ -29,7 +28,7 @@ export function renderTerminal(report: Report): string {
         out.push(`${dim('fuente')}  ${s.file} ${dim(`(${s.type}, ${s.events} eventos, ${s.skipped} líneas ignoradas)`)}`);
     }
     if (report.period) {
-        out.push(`${dim('periodo')} ${formatDate(report.period.from)} → ${formatDate(report.period.to)} UTC`);
+        out.push(`${dim('periodo')} ${formatDate(report.period.from)} → ${formatDate(report.period.to)} ${dim(`(${utcOffsetLabel(report.period.to)})`)}`);
     }
     out.push('');
     out.push(

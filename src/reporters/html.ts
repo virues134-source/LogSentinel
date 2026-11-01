@@ -3,6 +3,7 @@ import type { Finding, Severity } from '../types.ts';
 import { SEVERITY_ORDER } from '../types.ts';
 import { mitreUrl } from '../mitre.ts';
 import { GUIDANCE } from '../guidance.ts';
+import { formatClock, formatDateTime, formatDay, utcOffsetLabel } from '../time.ts';
 
 /**
  * Escapa todo lo que viene de los logs. Las líneas de log las controla el atacante:
@@ -45,18 +46,12 @@ const VERDICT: Record<Severity | 'none', { title: string; text: string }> = {
     },
 };
 
-function formatDate(date: Date): string {
-    return date.toISOString().replace('T', ' ').slice(0, 19);
-}
-
-function formatTime(date: Date): string {
-    return date.toISOString().slice(11, 16);
-}
+const formatDate = formatDateTime;
+const formatTime = (date: Date) => formatClock(date).slice(0, 5);
 
 function formatRange(from: Date, to: Date): string {
-    const sameDay = from.toISOString().slice(0, 10) === to.toISOString().slice(0, 10);
     if (from.getTime() === to.getTime()) return formatDate(from);
-    return sameDay ? `${formatDate(from)} – ${to.toISOString().slice(11, 19)}` : `${formatDate(from)} – ${formatDate(to)}`;
+    return formatDay(from) === formatDay(to) ? `${formatDate(from)} – ${formatClock(to)}` : `${formatDate(from)} – ${formatDate(to)}`;
 }
 
 const pill = (s: Severity) => `<span class="pill" data-sev="${s}">${LABEL[s]}</span>`;
@@ -80,7 +75,7 @@ function renderFinding(f: Finding, index: number): string {
   <dl class="facts">
     ${f.ip ? `<div><dt>IP de origen</dt><dd><code>${e(f.ip)}</code></dd></div>` : ''}
     ${f.user ? `<div><dt>Usuario</dt><dd><code>${e(f.user)}</code></dd></div>` : ''}
-    <div><dt>Cuándo (UTC)</dt><dd>${formatRange(f.firstSeen, f.lastSeen)}</dd></div>
+    <div><dt>Cuándo</dt><dd>${formatRange(f.firstSeen, f.lastSeen)}</dd></div>
     <div><dt>Eventos</dt><dd>${f.count}</dd></div>
     <div class="wide"><dt>MITRE ATT&amp;CK</dt><dd>${f.mitre.map((m) => `<a href="${mitreUrl(m.id)}" target="_blank" rel="noopener noreferrer"><code>${e(m.id)}</code> ${e(m.name)}</a>`).join('')}</dd></div>
   </dl>
@@ -135,7 +130,7 @@ export function renderHtml(report: Report): string {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
-<title>Informe LogSentinel · ${formatDate(report.generatedAt).slice(0, 10)}</title>
+<title>Informe LogSentinel · ${formatDay(report.generatedAt)}</title>
 <style>
 :root{--bg:#f4f5f3;--card:#fff;--ink:#14171a;--ink2:#4f5660;--ink3:#7b828b;--rule:#dfe2de;--crit:#a3161a;--crit-bg:#fbeaea;--high:#c2410c;--high-bg:#fdf0e7;--med:#9a6700;--med-bg:#fbf4e1;--low:#0b6e8a;--low-bg:#e6f3f7;--ok:#1d6b45;--ok-bg:#e7f3ec;--mono:ui-monospace,"Cascadia Mono",Consolas,monospace}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}
@@ -218,9 +213,9 @@ footer{margin-top:64px;padding-top:16px;border-top:1px solid var(--rule);font-si
     <h1>Informe de análisis de logs</h1>
   </div>
   <p class="meta">
-    Generado <b>${formatDate(report.generatedAt)}</b> UTC<br>
-    ${report.period ? `Periodo analizado <b>${formatRange(report.period.from, report.period.to)}</b> UTC<br>` : ''}
-    <b>${totals.events.toLocaleString('es-ES')}</b> eventos en ${report.sources.length} fichero(s)
+    Generado <b>${formatDate(report.generatedAt)}</b><br>
+    ${report.period ? `Periodo analizado <b>${formatRange(report.period.from, report.period.to)}</b><br>` : ''}
+    <b>${totals.events.toLocaleString('es-ES')}</b> eventos en ${report.sources.length} fichero(s) · horas en ${utcOffsetLabel(report.generatedAt)}
   </p>
 </header>
 <nav class="toc"><a href="#resumen">Resumen</a><a href="#cronologia">Cronología</a><a href="#ips">IPs</a><a href="#hallazgos">Hallazgos</a></nav>
@@ -249,7 +244,7 @@ footer{margin-top:64px;padding-top:16px;border-top:1px solid var(--rule);font-si
 <section id="cronologia">
   <h2>Cronología</h2>
   <p class="lead">Los hallazgos en el orden en que empezaron. Sirve para reconstruir la secuencia de un ataque.</p>
-  ${timeline ? `<table><thead><tr><th>Hora (UTC)</th><th>Gravedad</th><th>Hallazgo</th><th>Origen</th></tr></thead><tbody>${timeline}</tbody></table>` : '<p class="empty">Sin hallazgos.</p>'}
+  ${timeline ? `<table><thead><tr><th>Hora</th><th>Gravedad</th><th>Hallazgo</th><th>Origen</th></tr></thead><tbody>${timeline}</tbody></table>` : '<p class="empty">Sin hallazgos.</p>'}
 </section>
 
 <section id="ips">

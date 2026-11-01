@@ -10,7 +10,10 @@ test('auth: intento fallido con usuario válido', () => {
     assert.equal(e.user, 'root');
     assert.equal(e.ip, '203.0.113.45');
     assert.equal(e.method, 'password');
-    assert.equal(e.timestamp.toISOString(), '2026-10-27T02:10:02.000Z');
+    // syslog no lleva zona horaria: se interpreta como hora local
+    assert.equal(e.timestamp.getHours(), 2);
+    assert.equal(e.timestamp.getMinutes(), 10);
+    assert.equal(e.timestamp.getDate(), 27);
 });
 
 test('auth: intento fallido con usuario inexistente', () => {
@@ -25,7 +28,7 @@ test('auth: login aceptado con clave pública', () => {
     assert.equal(e?.action, 'accepted');
     assert.equal(e?.user, 'alice');
     assert.equal(e?.method, 'publickey');
-    assert.equal(e?.timestamp.getUTCDate(), 7);
+    assert.equal(e?.timestamp.getDate(), 7);
 });
 
 test('auth: formato RFC 3339 e IPv6', () => {

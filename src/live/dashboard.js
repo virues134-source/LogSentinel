@@ -17,8 +17,9 @@ function el(tag, className, text) {
     return node;
 }
 
+// Hora local del navegador (el log puede estar en UTC u otra zona horaria).
 function time(iso) {
-    return iso ? iso.slice(11, 19) : '';
+    return iso ? new Date(iso).toLocaleTimeString('es-ES', { hour12: false }) : '';
 }
 
 function statusClass(status) {

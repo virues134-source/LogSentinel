@@ -18,8 +18,8 @@ const SUDO = /^\s*(\S+) : .*?COMMAND=(.+)$/;
 
 /**
  * Convierte la fecha de la cabecera a Date. El formato syslog clásico no incluye ni año
- * ni zona horaria: se usa el año indicado y la hora se toma tal cual (como UTC), para que
- * el informe muestre la misma hora que aparece en el log, se analice donde se analice.
+ * ni zona horaria: se usa el año indicado y se asume la hora local, que es como lo
+ * escribe rsyslog por defecto.
  */
 function parseTimestamp(match: RegExpMatchArray, year: number): Date | null {
     if (match[6]) {
@@ -28,7 +28,7 @@ function parseTimestamp(match: RegExpMatchArray, year: number): Date | null {
     }
     const month = MONTHS[match[1]];
     if (month === undefined) return null;
-    return new Date(Date.UTC(year, month, Number(match[2]), Number(match[3]), Number(match[4]), Number(match[5])));
+    return new Date(year, month, Number(match[2]), Number(match[3]), Number(match[4]), Number(match[5]));
 }
 
 export function parseAuthLine(raw: string, line: number, source: string, year: number): AuthEvent | null {

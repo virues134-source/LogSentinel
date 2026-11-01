@@ -22,8 +22,11 @@ const PRODUCTS = [
 const ADMIN = { user: 'admin', password: 'aurora2026' };
 const DOWNLOADS = new Set(['catalogo-2026.pdf', 'tarifas-hosteleria.pdf']);
 
+/** Fecha en formato de nginx con la hora local y su desfase, p. ej. 01/Nov/2026:21:58:03 +0100. */
 function clfDate(date: Date): string {
-    return `${pad(date.getUTCDate())}/${MONTHS[date.getUTCMonth()]}/${date.getUTCFullYear()}:${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())} +0000`;
+    const offset = -date.getTimezoneOffset();
+    const zone = `${offset >= 0 ? '+' : '-'}${pad(Math.floor(Math.abs(offset) / 60))}${pad(Math.abs(offset) % 60)}`;
+    return `${pad(date.getDate())}/${MONTHS[date.getMonth()]}/${date.getFullYear()}:${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())} ${zone}`;
 }
 
 function escape(value: string): string {
