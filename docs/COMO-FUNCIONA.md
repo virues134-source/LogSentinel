@@ -82,13 +82,13 @@ Por eso `escapeHtml()` convierte `< > & " '` en entidades HTML, y además el inf
 
 ## 5. Tests
 
-`npm test` ejecuta 33 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección.
+`npm test` ejecuta 41 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección. Además, una prueba de extremo a extremo lanza la simulación completa contra la tienda y comprueba que cada fase dispara su regla.
 
 ## 6. El laboratorio: cómo comprobar que no es inventado
 
 `npm run lab` arranca tres piezas en un mismo proceso:
 
-1. **La tienda Café Aurora** (`lab/shop.ts`): un servidor web de verdad. Cada petición que recibe la apunta en `lab/logs/access.log` con el mismo formato que nginx. Puedes abrir ese fichero mientras navegas y ver cómo crece.
+1. **La tienda Tostadero Nébula** (`lab/shop.ts`, con la lógica en `lab/shop-core.ts`): un servidor web de verdad. Cada petición que recibe la apunta en `lab/logs/access.log` con el mismo formato que nginx. Puedes abrir ese fichero mientras navegas y ver cómo crece.
 2. **El monitor** (`src/live/`): sigue ese fichero como `tail -f`. Cada 300 ms mira si ha crecido, lee solo lo nuevo, lo convierte en eventos y vuelve a pasar las reglas. Comparando con la pasada anterior sabe qué alertas son nuevas y cuáles han subido de gravedad.
 3. **El panel** (`http://127.0.0.1:8090`): recibe cada línea y cada alerta por *Server-Sent Events*, una conexión que el servidor mantiene abierta para enviar datos al navegador en cuanto los tiene.
 
@@ -97,9 +97,20 @@ Para comprobar por ti mismo que no hay nada preparado:
 - Ataca la tienda a mano, con URLs que te inventes, y mira si salta la alerta.
 - Abre `lab/logs/access.log` y comprueba que las líneas del panel están ahí.
 - Navega normal por la tienda: no debería saltar nada.
-- Lee `lab/attacks.ts`: el simulador solo envía peticiones HTTP; no habla con el monitor ni le dice qué detectar. LogSentinel se entera de todo únicamente por el log.
+- Lee `lab/attacks.ts`: el simulador solo envía peticiones; no habla con el monitor ni le dice qué detectar. LogSentinel se entera de todo únicamente por el log.
 
 Un detalle: todas las peticiones salen de tu ordenador (127.0.0.1). Para representar atacantes distintos, el simulador envía la cabecera `X-Forwarded-For`, que es la que añaden los proxies y balanceadores con la IP original del cliente, y la tienda la usa al escribir el log. Si atacas a mano, verás tu propia IP, 127.0.0.1.
+
+### La demo web
+
+La versión publicada en GitHub Pages no tiene servidor: todo ocurre en el navegador del visitante, con **el mismo código**.
+
+- `scripts/build-site.ts` toma los módulos del motor (parsers, reglas, informe, monitor) y la tienda, les quita los tipos de TypeScript con la función que trae Node (`module.stripTypeScriptTypes`) y genera JavaScript normal en `site/`.
+- En la página, cada clic o dirección que escribes en la tienda pasa por `handleShopRequest()`, que devuelve la respuesta y genera su línea de log en formato nginx. Esa línea entra en el mismo monitor que usa el laboratorio.
+- La tienda se pinta en un `iframe` aislado (`sandbox` sin scripts), así que aunque metas `<script>` en el buscador, no se ejecuta nada. Los enlaces y formularios los intercepta la página.
+- No hay cookies, analítica ni peticiones a ningún servidor: no se recoge ningún dato de quien la visita.
+
+¿Por qué así y no con un servidor público? Un servidor tendría que guardar y mostrar las IPs reales de los visitantes (un dato personal según el RGPD), todos compartirían el mismo panel y una tienda con fallos a propósito quedaría expuesta en internet.
 
 ## 7. Preguntas que te pueden hacer en una entrevista
 

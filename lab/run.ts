@@ -7,7 +7,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { startShop } from './shop.ts';
-import { runAttackScenario } from './attacks.ts';
+import { httpTransport, runAttackScenario } from './attacks.ts';
 import { createMonitor } from '../src/live/monitor.ts';
 import { startDashboard } from '../src/live/dashboard.ts';
 import { tailFile } from '../src/live/tail.ts';
@@ -30,7 +30,7 @@ const dashboard = startDashboard({
     source: 'lab/logs/access.log',
     report: monitor.report,
     shopUrl,
-    onSimulate: () => runAttackScenario(shopUrl, (text) => {
+    onSimulate: () => runAttackScenario(httpTransport(shopUrl), (text) => {
         dashboard.setPhase(text);
         console.log(`\n» ${text}`);
     }),

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'self' about: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<title>LogSentinel · Demo en directo</title>
+<meta name="description" content="Demo de LogSentinel: una tienda ficticia recibe ataques simulados y LogSentinel los detecta en directo, todo dentro del navegador.">
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="demo.css">
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div>
+      <h1><span class="wordmark">Log<span>Sentinel</span></span><span class="surface">Demo en directo</span></h1>
+      <p class="dateline">
+        <span class="live off" id="live"><i></i><span id="live-text">Cargando</span></span>
+        <span id="clock"></span>
+        <span id="source"></span>
+      </p>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://github.com/virues134-source/LogSentinel" target="_blank" rel="noopener noreferrer">Código en GitHub</a>
+      <a class="btn" id="report" href="#">Ver informe</a>
+      <button class="btn primary" id="simulate" type="button" hidden>Simular ataque</button>
+    </div>
+  </header>
+
+  <div class="threat" id="threat" data-level="none" role="status" aria-live="polite">
+    <span class="label">Nivel de amenaza</span>
+    <span><span class="level" id="threat-level">Sin incidencias</span> <span class="why" id="threat-why">El tráfico es normal. No hay alertas activas.</span></span>
+    <span class="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+  </div>
+
+  <dl class="indices">
+    <div class="index"><dt>Líneas analizadas</dt><dd><b id="c-events">0</b><small id="d-events"></small></dd></div>
+    <div class="index"><dt>Alertas</dt><dd><b id="c-alerts">0</b><small id="d-alerts"></small></dd></div>
+    <div class="index" data-sev="critical"><dt>Críticas</dt><dd><b id="c-critical">0</b></dd></div>
+    <div class="index" data-sev="high"><dt>Altas</dt><dd><b id="c-high">0</b></dd></div>
+    <div class="index" data-sev="medium"><dt>Medias</dt><dd><b id="c-medium">0</b></dd></div>
+  </dl>
+
+  <div class="breaking" id="breaking" role="status"><span class="kicker" id="breaking-kicker">Simulación</span><span id="breaking-text"></span></div>
+
+  <details class="explainer" id="explainer" open>
+    <summary>Qué es LogSentinel y cómo funciona esta demo</summary>
+    <div class="explainer-body">
+      <p>Todos los servidores apuntan en un fichero, llamado <b>log</b>, cada cosa que pasa: quién visita una página, quién intenta entrar, qué falla. <b>LogSentinel</b> lee ese fichero mientras se escribe y busca en él las huellas que dejan los ataques más habituales.</p>
+      <ol class="steps">
+        <li><b>Una tienda ficticia.</b> A la izquierda tienes la web de Tostadero Nébula. Puedes navegar por ella o escribir direcciones en su barra. Cada visita se apunta en su log, como en un servidor real.</li>
+        <li><b>LogSentinel la vigila.</b> Lee cada línea del log al momento y la compara con reglas que reconocen ataques: probar contraseñas sin parar, meter código en la dirección web, buscar ficheros privados…</li>
+        <li><b>Si algo encaja, avisa.</b> La alerta aparece a la derecha con lo que significa, y el nivel de amenaza cambia de color. Pulsa «Simular ataque» para ver un ataque completo.</li>
+      </ol>
+    </div>
+  </details>
+
+  <div class="demo-grid">
+    <section aria-labelledby="shop-title">
+      <div class="col-head"><h2 id="shop-title">La tienda</h2><p>Tus visitas salen con la IP 192.0.2.1</p></div>
+      <div class="browser">
+        <form class="browser-bar" id="address-form" autocomplete="off">
+          <button class="nav-btn" id="back" type="button" aria-label="Atrás" disabled>
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>
+          </button>
+          <label class="address">
+            <span class="host">tostadero.nebula</span>
+            <input id="address" name="address" spellcheck="false" aria-label="Dirección de la tienda" value="/">
+          </label>
+          <button class="go" type="submit">Ir</button>
+        </form>
+        <iframe id="shop-frame" title="Tienda ficticia Tostadero Nébula" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
+      </div>
+    </section>
+
+    <section aria-label="Alertas e IPs">
+      <div class="col-head">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" id="tab-alerts" aria-selected="true" aria-controls="panel-alerts" type="button">Qué está pasando<span id="n-alerts">0</span></button>
+          <button class="tab" role="tab" id="tab-ips" aria-selected="false" aria-controls="panel-ips" type="button">IPs<span id="n-ips">0</span></button>
+        </div>
+      </div>
+      <div class="panel demo-panel" id="panel-alerts" role="tabpanel" aria-labelledby="tab-alerts" aria-live="polite">
+        <div class="empty-state" id="alerts-empty"><b>Sin alertas.</b>Navega por la tienda con normalidad y esta columna seguirá vacía. Prueba uno de los ataques de abajo o pulsa «Simular ataque».</div>
+      </div>
+      <div class="panel demo-panel" id="panel-ips" role="tabpanel" aria-labelledby="tab-ips" hidden>
+        <table class="ips"><thead><tr><th>IP</th><th>Peor alerta</th><th class="num">Puntos</th><th>Reglas</th></tr></thead><tbody id="ips"></tbody></table>
+        <div class="empty-state" id="ips-empty"><b>Ninguna IP señalada.</b>Aquí aparecerán las direcciones con alertas, ordenadas por riesgo.</div>
+      </div>
+    </section>
+  </div>
+
+  <section class="tryit" id="tryit" hidden>
+    <div>
+      <h2>Atácala tú</h2>
+      <p>Pulsa cualquiera de estas direcciones: se abrirá en la tienda y verás qué detecta LogSentinel.</p>
+    </div>
+    <ul id="tryit-list"></ul>
+  </section>
+
+  <section class="tape-section" aria-labelledby="tape-title">
+    <div class="col-head"><h2 id="tape-title">Actividad</h2><p>Cada fila es una línea del log de la tienda, la más reciente arriba</p></div>
+    <div class="tape-wrap short" id="tape-wrap">
+      <table class="tape">
+        <colgroup><col class="c-flag"><col class="c-time"><col class="c-ip"><col class="c-req"><col class="c-status"></colgroup>
+        <thead><tr><th aria-label="Marcada"></th><th>Hora</th><th>IP</th><th>Petición</th><th class="status">Estado</th></tr></thead>
+        <tbody id="tape"></tbody>
+      </table>
+      <div class="empty-state" id="tape-empty"><b>Todavía no hay tráfico.</b>Cada visita a la tienda aparecerá aquí.</div>
+    </div>
+  </section>
+
+  <footer class="legal">
+    <p>Demo educativa. Todo se ejecuta en tu navegador: no se envía ni se guarda ningún dato. Tostadero Nébula es una empresa ficticia; las IPs de los atacantes pertenecen a rangos reservados para documentación (RFC 5737). MITRE ATT&amp;CK® es una marca registrada de The MITRE Corporation. Código bajo licencia MIT.</p>
+  </footer>
+</div>
+
+<dialog class="confirm" id="confirm" aria-labelledby="confirm-title">
+  <div class="confirm-body">
+    <h2 id="confirm-title">Simular un ataque</h2>
+    <p>Durante un minuto, un simulador hará contra la tienda ficticia lo mismo que haría un atacante:</p>
+    <ol>
+      <li>Visitas normales de clientes.</li>
+      <li>Un escaneo automático en busca de páginas y ficheros ocultos.</li>
+      <li>Intentos de inyección SQL para leer la base de datos.</li>
+      <li>Código JavaScript metido en el buscador (XSS).</li>
+      <li>Intentos de leer ficheros del sistema.</li>
+      <li>Intentos de ejecutar comandos en el servidor.</li>
+      <li>Fuerza bruta contra el acceso de empleados, hasta acertar la contraseña.</li>
+    </ol>
+    <p class="safe">Todo ocurre dentro de esta página. No se envía nada a ninguna web real.</p>
+  </div>
+  <div class="confirm-actions">
+    <button class="btn" id="confirm-cancel" type="button">Cancelar</button>
+    <button class="btn primary" id="confirm-start" type="button">Empezar simulación</button>
+  </div>
+</dialog>
+
+<script type="module" src="demo.js"></script>
+</body>
+</html>

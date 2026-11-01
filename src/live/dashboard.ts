@@ -13,7 +13,7 @@ import { GUIDANCE } from '../guidance.ts';
 const asset = (name: string) => readFileSync(fileURLToPath(new URL(`./${name}`, import.meta.url)), 'utf8');
 
 const SECURITY_HEADERS = {
-    'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'",
+    'content-security-policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
     'x-content-type-options': 'nosniff',
     'referrer-policy': 'no-referrer',
 };
@@ -52,9 +52,14 @@ export function startDashboard(options: DashboardOptions) {
             res.end(asset('dashboard.html'));
             return;
         }
-        if (req.method === 'GET' && url.pathname === '/dashboard.js') {
-            res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', ...SECURITY_HEADERS });
-            res.end(asset('dashboard.js'));
+        const STATIC: Record<string, string> = {
+            '/dashboard.js': 'text/javascript',
+            '/dashboard-ui.js': 'text/javascript',
+            '/dashboard.css': 'text/css',
+        };
+        if (req.method === 'GET' && STATIC[url.pathname]) {
+            res.writeHead(200, { 'content-type': `${STATIC[url.pathname]}; charset=utf-8`, ...SECURITY_HEADERS });
+            res.end(asset(url.pathname.slice(1)));
             return;
         }
         if (req.method === 'GET' && url.pathname === '/events') {
@@ -76,7 +81,7 @@ export function startDashboard(options: DashboardOptions) {
             return;
         }
         if (req.method === 'GET' && url.pathname === '/report') {
-            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+            res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer' });
             res.end(renderHtml(options.report()));
             return;
         }

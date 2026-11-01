@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,3 +18,5 @@ jobs:
       - run: npm test
       - name: Análisis de los logs de ejemplo
         run: node src/cli.ts analyze samples/auth.log samples/access.log --year 2026
+      - name: Construcción de la demo web
+        run: node scripts/build-site.ts

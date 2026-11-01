@@ -185,7 +185,8 @@ export function loadConfig(path?: string): DetectionConfig {
 
 function readLog(file: string): string {
     const buffer = readFileSync(file);
-    return (file.endsWith('.gz') ? gunzipSync(buffer) : buffer).toString('utf8');
+    // Límite al descomprimir: un .gz malicioso de pocos KB podría ocupar gigas (zip bomb).
+    return (file.endsWith('.gz') ? gunzipSync(buffer, { maxOutputLength: 512 * 1024 * 1024 }) : buffer).toString('utf8');
 }
 
 function detectType(content: string): 'auth' | 'web' | null {

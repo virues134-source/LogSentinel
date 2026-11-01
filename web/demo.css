@@ -1,0 +1,18 @@
+/* Demo web: la tienda dentro de una ventana de navegador junto al panel. */
+.demo-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:32px;margin-top:28px}
+.browser{border:1px solid var(--ink);background:#fff;display:flex;flex-direction:column;height:620px}
+.browser-bar{display:flex;align-items:center;gap:8px;padding:8px;background:var(--paper-2);border-bottom:1px solid var(--ink);margin:0}
+.nav-btn{display:grid;place-items:center;width:34px;height:34px;background:none;border:1px solid var(--rule);cursor:pointer;color:var(--ink)}
+.nav-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+.nav-btn:disabled{color:var(--rule);cursor:default}
+.address{flex:1;display:flex;align-items:center;min-width:0;background:var(--sheet);border:1px solid var(--rule);height:34px;padding-left:10px;font:13px var(--mono)}
+.address:focus-within{border-color:var(--ink)}
+.address .host{color:var(--ink-3);white-space:nowrap}
+.address input{flex:1;min-width:0;border:0;background:transparent;font:inherit;color:var(--ink);padding:0 10px 0 0;height:100%}
+.address input:focus{outline:none}
+.go{height:34px;padding:0 14px;font:600 13px/1 var(--sans);background:var(--ink);color:var(--paper);border:0;cursor:pointer}
+.browser iframe{flex:1;width:100%;border:0;background:#f1efe9}
+.demo-panel{height:620px}
+.tape-section{margin-top:36px}
+@media (max-width:1000px){.demo-grid{grid-template-columns:1fr}.browser{height:560px}.demo-panel{height:auto;max-height:520px}}
+@media (max-width:640px){.address .host{display:none}.browser{height:520px}}
