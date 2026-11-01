@@ -1,0 +1,26 @@
+{
+  "name": "logsentinel",
+  "version": "1.0.0",
+  "description": "Analizador de logs de SSH y servidores web que detecta ataques, los mapea a MITRE ATT&CK y genera informes y alertas.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/cli.ts",
+    "test": "node --test \"tests/**/*.test.ts\"",
+    "samples": "node scripts/generate-samples.ts",
+    "demo": "node src/cli.ts analyze samples/auth.log samples/access.log --format html --out report.html"
+  },
+  "engines": {
+    "node": ">=24.2"
+  },
+  "keywords": [
+    "security",
+    "blue-team",
+    "log-analysis",
+    "mitre-attack",
+    "ssh",
+    "nginx",
+    "detection"
+  ],
+  "author": "Víctor Ruiz Esteban",
+  "license": "MIT"
+}

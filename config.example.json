@@ -1,0 +1,6 @@
+{
+  "bruteForce": { "threshold": 10, "windowMinutes": 5 },
+  "passwordSpray": { "distinctUsers": 5, "windowMinutes": 10 },
+  "dirScan": { "notFoundThreshold": 25, "windowMinutes": 5 },
+  "maxEvidence": 5
+}
