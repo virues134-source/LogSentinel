@@ -25,5 +25,14 @@
     "detection"
   ],
   "author": "Víctor Ruiz Esteban",
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://virues134-source.github.io/LogSentinel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/virues134-source/LogSentinel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/virues134-source/LogSentinel/issues"
+  },
+  "private": true
 }

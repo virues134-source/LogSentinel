@@ -1,5 +1,7 @@
 # LogSentinel
 
+[![tests](https://github.com/virues134-source/LogSentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/virues134-source/LogSentinel/actions/workflows/tests.yml) [![demo](https://img.shields.io/badge/demo-en%20directo-8f1d3f)](https://virues134-source.github.io/LogSentinel/) ![sin dependencias](https://img.shields.io/badge/dependencias-0-2f6b5a) [![licencia MIT](https://img.shields.io/badge/licencia-MIT-1d1916)](LICENSE)
+
 Herramienta que analiza logs de **SSH** (`auth.log`) y de **servidores web** (nginx / Apache), detecta ataques habituales, los relaciona con técnicas de **MITRE ATT&CK®** y explica cada hallazgo en lenguaje claro: qué ha pasado, cómo de grave es y qué hacer. Genera informes en terminal, JSON o HTML, tiene un panel en directo y puede enviar alertas a un **webhook** (por ejemplo, un flujo de n8n que avise por Telegram o correo).
 
 Escrita en TypeScript sobre Node.js, **sin dependencias externas**.
@@ -41,9 +43,20 @@ Algunas decisiones de diseño:
 
 ![Informe HTML de LogSentinel](docs/informe-html.jpg)
 
+## Instalación
+
+Requiere [Node.js](https://nodejs.org/) 24.2 o superior. No tiene dependencias, así que no hace falta `npm install`:
+
+```bash
+git clone https://github.com/virues134-source/LogSentinel.git
+cd LogSentinel
+npm test
+```
+
+También puedes descargarlo como ZIP desde **Code → Download ZIP** o desde la última [release](https://github.com/virues134-source/LogSentinel/releases). Descargarlo no ejecuta nada; en [SECURITY.md](SECURITY.md) se explica qué hace cada parte en tu equipo.
+
 ## Uso
 
-Requiere Node.js 24.2 o superior (ejecuta TypeScript directamente, sin compilar).
 
 ```bash
 # Análisis rápido en terminal
