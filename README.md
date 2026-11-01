@@ -22,6 +22,8 @@ Escrita en TypeScript sobre Node.js, **sin dependencias externas**.
 | `web-sensitive-file-probe` | Búsqueda de `.env`, `.git/`, backups, phpMyAdmin… | Media | T1595.003 |
 | `web-scanner-user-agent` | Herramientas que se identifican: sqlmap, Nikto, Nuclei, gobuster… | Media | T1595.002 |
 | `web-directory-bruteforce` | Ráfagas de respuestas 404 desde una IP (fuzzing de rutas) | Media | T1595.003 |
+| `web-login-bruteforce` | Muchos POST fallidos (401/403) a un formulario de login | Alta | T1110.001 |
+| `web-login-success-after-failures` | Login web correcto después de esa ráfaga de fallos | Crítica | T1078, T1110.001 |
 
 Algunas decisiones de diseño:
 
@@ -32,6 +34,29 @@ Algunas decisiones de diseño:
 - **Decodificación múltiple de URLs** para detectar evasiones como `%252e%252e%252f`.
 - **Puntuación de riesgo por IP**, para saber qué bloquear primero.
 - **El informe HTML escapa todo el contenido de los logs** y lleva una Content-Security-Policy estricta: los logs los escribe el atacante, y sin esto una petición con `<script>` se ejecutaría al abrir el informe.
+
+## Laboratorio en directo
+
+Para verlo funcionar en tiempo real hay un laboratorio con una empresa ficticia, **Café Aurora**: una tienda online real (un servidor web) que escribe su access log igual que nginx, y un panel donde se ve cada petición y cada alerta en el momento en que ocurre.
+
+```bash
+npm run lab
+```
+
+- **Panel en directo:** http://127.0.0.1:8090
+- **Tienda ficticia:** http://127.0.0.1:8080
+
+El botón **«Simular ataque»** lanza siete fases de ataques reales contra la tienda: tráfico normal, escaneo con Nikto, inyección SQL con sqlmap, XSS, path traversal, inyección de comandos y fuerza bruta contra el login de empleados, que acaba acertando la contraseña. También se puede atacar a mano desde el navegador (por ejemplo `/productos?id=1' OR '1'='1`) y ver cómo salta la alerta.
+
+![Panel en directo de LogSentinel](docs/panel-directo.jpg)
+
+El laboratorio solo escucha en `127.0.0.1` y el simulador se niega a atacar cualquier dirección que no sea local. Como todas las peticiones salen del mismo ordenador, el simulador envía la cabecera `X-Forwarded-For` (como haría un proxy) para representar atacantes con IPs distintas.
+
+El mismo modo en directo sirve para un servidor real:
+
+```bash
+node src/cli.ts watch /var/log/nginx/access.log --dashboard 8090
+```
 
 ## Requisitos
 
@@ -102,7 +127,7 @@ Y programarlo en el servidor, por ejemplo cada hora con cron:
 npm test
 ```
 
-30 tests con el runner nativo de Node (`node:test`): parsers, cada regla de detección (incluidos casos que **no** deben alertar), escape del HTML y validación de argumentos. Se ejecutan en cada push con GitHub Actions.
+33 tests con el runner nativo de Node (`node:test`): parsers, cada regla de detección (incluidos casos que **no** deben alertar), escape del HTML, validación de argumentos y el modo en directo (lectura incremental del log y alertas nuevas). Se ejecutan en cada push con GitHub Actions.
 
 ## Estructura
 
@@ -113,8 +138,14 @@ src/
 ├── parsers/            # auth.log y access log → eventos tipados
 ├── detectors/          # reglas SSH y web, ventanas deslizantes
 ├── reporters/          # terminal, JSON y HTML
+├── live/               # modo en directo: tail, monitor y panel web
+├── guidance.ts         # explicación y recomendaciones de cada regla
 ├── alerts.ts           # envío a webhook
 └── mitre.ts            # técnicas de MITRE ATT&CK
+lab/
+├── shop.ts             # tienda ficticia Café Aurora
+├── attacks.ts          # simulador de ataques (solo localhost)
+└── run.ts              # npm run lab
 ```
 
 En [docs/COMO-FUNCIONA.md](docs/COMO-FUNCIONA.md) está explicado paso a paso.
@@ -123,13 +154,11 @@ En [docs/COMO-FUNCIONA.md](docs/COMO-FUNCIONA.md) está explicado paso a paso.
 
 - Las reglas web son **firmas**: detectan ataques conocidos y pueden generar falsos positivos o dejar pasar variantes ofuscadas. No sustituyen a un WAF ni a un SIEM.
 - Los access logs no incluyen el cuerpo de las peticiones POST, así que los ataques enviados por POST no se ven.
-- Analiza ficheros completos; no está pensado para seguimiento en tiempo real.
 
 ## Próximos pasos
 
 - Enriquecer IPs con reputación (AbuseIPDB) y geolocalización.
 - Exportar reglas de bloqueo para `fail2ban` o `iptables`.
-- Modo `--follow` para analizar en tiempo real.
 - Soporte para logs de Windows (Event ID 4625).
 
 ## Licencia

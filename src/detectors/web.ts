@@ -190,4 +190,47 @@ export function detectDirectoryBruteForce(events: WebEvent[], config: DetectionC
     return findings;
 }
 
-export const webDetectors = [detectPatternAttacks, detectScannerAgents, detectDirectoryBruteForce];
+const LOGIN_PATH = /^\/(login|signin|wp-login\.php|admin\/login|user\/login|auth|api\/login)\b/i;
+
+/**
+ * Muchos POST fallidos (401/403) a un formulario de login desde la misma IP.
+ * Si después llega un login correcto (redirección 3xx o 200), el ataque probablemente funcionó.
+ */
+export function detectLoginBruteForce(events: WebEvent[], config: DetectionConfig): Finding[] {
+    const { threshold, windowMinutes } = config.bruteForce;
+    const findings: Finding[] = [];
+    const attempts = events.filter((e) => e.method === 'POST' && LOGIN_PATH.test(e.path)).sort(byTime);
+
+    for (const [ip, list] of groupBy(attempts, (e) => e.ip)) {
+        const failures = list.filter((e) => e.status === 401 || e.status === 403);
+        const win = densestWindow(failures, windowMinutes);
+        if (win.size < threshold) continue;
+
+        const lastFailure = failures[failures.length - 1];
+        const success = list.find(
+            (e) => e.timestamp >= lastFailure.timestamp && e.status < 400 && e !== lastFailure,
+        );
+
+        findings.push({
+            rule: success ? 'web-login-success-after-failures' : 'web-login-bruteforce',
+            title: success ? 'Acceso al login web tras múltiples fallos' : 'Fuerza bruta contra el login web',
+            severity: success ? 'critical' : 'high',
+            mitre: success ? [MITRE.validAccounts, MITRE.passwordGuessing] : [MITRE.passwordGuessing],
+            ip,
+            firstSeen: failures[0].timestamp,
+            lastSeen: (success ?? lastFailure).timestamp,
+            count: failures.length + (success ? 1 : 0),
+            description: success
+                ? `${ip} acertó la contraseña del login web (${success.status}) después de ${failures.length} intentos fallidos.`
+                : `${failures.length} intentos de login fallidos desde ${ip} (${win.size} en ${windowMinutes} min).`,
+            evidence: [
+                ...failures.slice(-(config.maxEvidence - (success ? 1 : 0))).map((e) => e.raw),
+                ...(success ? [success.raw] : []),
+            ],
+        });
+    }
+
+    return findings;
+}
+
+export const webDetectors = [detectPatternAttacks, detectScannerAgents, detectDirectoryBruteForce, detectLoginBruteForce];

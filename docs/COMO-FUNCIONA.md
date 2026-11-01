@@ -82,15 +82,32 @@ Por eso `escapeHtml()` convierte `< > & " '` en entidades HTML, y además el inf
 
 ## 5. Tests
 
-`npm test` ejecuta 30 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección.
+`npm test` ejecuta 33 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección.
 
-## 6. Preguntas que te pueden hacer en una entrevista
+## 6. El laboratorio: cómo comprobar que no es inventado
+
+`npm run lab` arranca tres piezas en un mismo proceso:
+
+1. **La tienda Café Aurora** (`lab/shop.ts`): un servidor web de verdad. Cada petición que recibe la apunta en `lab/logs/access.log` con el mismo formato que nginx. Puedes abrir ese fichero mientras navegas y ver cómo crece.
+2. **El monitor** (`src/live/`): sigue ese fichero como `tail -f`. Cada 300 ms mira si ha crecido, lee solo lo nuevo, lo convierte en eventos y vuelve a pasar las reglas. Comparando con la pasada anterior sabe qué alertas son nuevas y cuáles han subido de gravedad.
+3. **El panel** (`http://127.0.0.1:8090`): recibe cada línea y cada alerta por *Server-Sent Events*, una conexión que el servidor mantiene abierta para enviar datos al navegador en cuanto los tiene.
+
+Para comprobar por ti mismo que no hay nada preparado:
+
+- Ataca la tienda a mano, con URLs que te inventes, y mira si salta la alerta.
+- Abre `lab/logs/access.log` y comprueba que las líneas del panel están ahí.
+- Navega normal por la tienda: no debería saltar nada.
+- Lee `lab/attacks.ts`: el simulador solo envía peticiones HTTP; no habla con el monitor ni le dice qué detectar. LogSentinel se entera de todo únicamente por el log.
+
+Un detalle: todas las peticiones salen de tu ordenador (127.0.0.1). Para representar atacantes distintos, el simulador envía la cabecera `X-Forwarded-For`, que es la que añaden los proxies y balanceadores con la IP original del cliente, y la tienda la usa al escribir el log. Si atacas a mano, verás tu propia IP, 127.0.0.1.
+
+## 7. Preguntas que te pueden hacer en una entrevista
 
 **¿Por qué una ventana deslizante y no contar por hora fija?**
 Con horas fijas, un ataque de 12:58 a 13:03 se parte en dos y ninguna mitad supera el umbral. La ventana deslizante no tiene ese punto ciego.
 
 **¿Qué limitaciones tiene?**
-Las firmas detectan ataques conocidos; un payload ofuscado de otra forma se escapa. Los access logs no guardan el cuerpo de los POST. Y es análisis por lotes, no en tiempo real. Para producción se usaría un SIEM (Wazuh, Elastic) y reglas Sigma; esto sirve como herramienta ligera o para revisar logs concretos.
+Las firmas detectan ataques conocidos; un payload ofuscado de otra forma se escapa. Los access logs no guardan el cuerpo de los POST. El modo en directo vuelve a pasar todas las reglas con cada lote de líneas, lo que va bien para un servidor normal pero no para millones de eventos por minuto. Para producción se usaría un SIEM (Wazuh, Elastic) y reglas Sigma; esto sirve como herramienta ligera o para revisar logs concretos.
 
 **¿Cómo lo usarías en un servidor real?**
 Con cron cada hora, `--min-severity high` y `--webhook` hacia n8n, que reenvía la alerta a Telegram o correo. Con `--fail-on critical` también se puede integrar en un pipeline.
@@ -101,11 +118,11 @@ Es un catálogo público de técnicas de ataque reales. Mapear cada alerta a una
 **¿Cómo evitarías bloquear a un usuario legítimo?**
 Los umbrales son configurables (`--config`), la regla de login tras fallos exige varios fallos previos y las IPs internas se pueden revisar aparte. El siguiente paso sería una lista blanca de IPs.
 
-## 7. Ideas para seguir ampliándolo
+## 8. Ideas para seguir ampliándolo
 
 Estas mejoras están en el README como próximos pasos. Hacer alguna tú mismo es la mejor forma de que el proyecto sea tuyo de verdad:
 
 - **Lista blanca de IPs** en la configuración (fácil).
 - **Reputación de IPs** con la API de AbuseIPDB (media; ojo con no subir la API key al repo).
 - **Exportar reglas de bloqueo** para `iptables` o `fail2ban` (media).
-- **Modo `--follow`** que lea el log en tiempo real con `fs.watch` (avanzada).
+- **Lista de IPs bloqueadas** que la tienda del laboratorio lea para rechazar al atacante en cuanto LogSentinel lo detecta (avanzada: convierte la detección en respuesta).

@@ -90,6 +90,22 @@ export const GUIDANCE: Record<string, Guidance> = {
             'Revisar el resto de hallazgos de esa IP: suele ser el paso previo a un ataque.',
         ],
     },
+    'web-login-bruteforce': {
+        meaning: 'Alguien está probando contraseñas en el formulario de login de la web.',
+        actions: [
+            'Bloquear la IP.',
+            'Limitar los intentos de login por IP y por cuenta, o añadir un CAPTCHA tras varios fallos.',
+            'Activar la verificación en dos pasos (2FA) para las cuentas con más permisos.',
+        ],
+    },
+    'web-login-success-after-failures': {
+        meaning: 'Después de muchos intentos fallidos en el login de la web, la misma IP consiguió entrar. Lo más probable es que haya adivinado la contraseña.',
+        actions: [
+            'Bloquear la IP y cerrar las sesiones abiertas de esa cuenta.',
+            'Cambiar la contraseña de la cuenta afectada.',
+            'Revisar qué hizo la sesión después de entrar.',
+        ],
+    },
     'web-directory-bruteforce': {
         meaning: 'Alguien está probando cientos de rutas para descubrir páginas o paneles ocultos.',
         actions: [

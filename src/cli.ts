@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { basename } from 'node:path';
 import type { DetectionConfig, LogEvent, Severity } from './types.ts';
@@ -15,9 +15,15 @@ import { sendWebhook } from './alerts.ts';
 const HELP = `LogSentinel · detección de ataques en logs de SSH y servidores web
 
 Uso:
-  node src/cli.ts analyze <fichero...> [opciones]
+  node src/cli.ts analyze <fichero...> [opciones]   Analiza logs y genera un informe
+  node src/cli.ts watch <fichero> [opciones]        Vigila un log en tiempo real (como tail -f)
 
-Opciones:
+Opciones de watch:
+  --type <auth|web>           Formato del log (obligatorio si el fichero está vacío)
+  --dashboard <puerto>        Abre además un panel web en directo en http://127.0.0.1:<puerto>
+  --config, --year            Igual que en analyze
+
+Opciones de analyze:
   --type <auth|web|auto>      Formato de los ficheros (por defecto: auto)
   --format <table|json|html>  Formato del informe (por defecto: table)
   --out <fichero>             Guarda el informe en un fichero en lugar de mostrarlo
@@ -32,7 +38,55 @@ Ejemplos:
   node src/cli.ts analyze /var/log/auth.log
   node src/cli.ts analyze samples/auth.log samples/access.log --format html --out report.html
   node src/cli.ts analyze access.log.gz --min-severity high --webhook https://n8n.example.com/webhook/logsentinel
+  node src/cli.ts watch /var/log/nginx/access.log --dashboard 8090
 `;
+
+/** Modo en directo: sigue el log y muestra cada alerta nueva en cuanto aparece. */
+async function watch(argv: string[]): Promise<number> {
+    let file: string | undefined;
+    let type: 'auth' | 'web' | undefined;
+    let dashboardPort: number | undefined;
+    let configPath: string | undefined;
+    let year = new Date().getFullYear();
+
+    for (let i = 0; i < argv.length; i++) {
+        const arg = argv[i];
+        if (!arg.startsWith('--')) {
+            file = arg;
+            continue;
+        }
+        const value = argv[++i];
+        if (value === undefined) throw new UsageError(`Falta el valor de ${arg}`);
+        if (arg === '--type' && (value === 'auth' || value === 'web')) type = value;
+        else if (arg === '--dashboard' && /^\d+$/.test(value)) dashboardPort = Number(value);
+        else if (arg === '--config') configPath = value;
+        else if (arg === '--year' && /^\d{4}$/.test(value)) year = Number(value);
+        else throw new UsageError(`Opción no válida en watch: ${arg} ${value}`);
+    }
+    if (!file) throw new UsageError('Indica el fichero de log que quieres vigilar.');
+
+    const detected = type ?? (existsSync(file) ? detectType(readLog(file)) : null);
+    if (!detected) throw new UsageError(`No se puede saber el formato de ${file}. Usa --type auth|web.`);
+
+    const { createMonitor } = await import('./live/monitor.ts');
+    const { tailFile } = await import('./live/tail.ts');
+    const { formatAlert } = await import('./live/console.ts');
+
+    const monitor = createMonitor({ type: detected, source: basename(file), year, config: loadConfig(configPath) });
+    const dashboard = dashboardPort
+        ? (await import('./live/dashboard.ts')).startDashboard({ port: dashboardPort, source: file, report: monitor.report })
+        : null;
+
+    tailFile(file, (lines) => {
+        const update = monitor.ingest(lines);
+        dashboard?.push(update);
+        for (const change of update.changes) console.log(formatAlert(change));
+    }, { fromStart: true });
+
+    console.error(`Vigilando ${file} (${detected === 'auth' ? 'auth.log' : 'access log'}). Ctrl+C para salir.`);
+    if (dashboardPort) console.error(`Panel en directo: http://127.0.0.1:${dashboardPort}`);
+    return new Promise(() => {});
+}
 
 interface Options {
     files: string[];
@@ -163,6 +217,16 @@ export function loadEvents(options: Options): { events: LogEvent[]; sources: Rep
 }
 
 export async function main(argv: string[]): Promise<number> {
+    if (argv[0] === 'watch') {
+        try {
+            return await watch(argv.slice(1));
+        } catch (error) {
+            console.error(`Error: ${(error as Error).message}\n`);
+            console.error(HELP);
+            return 1;
+        }
+    }
+
     let options: Options | null;
     try {
         options = parseArgs(argv);
