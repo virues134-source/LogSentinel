@@ -13,6 +13,9 @@
 .go{height:34px;padding:0 14px;font:600 13px/1 var(--sans);background:var(--ink);color:var(--paper);border:0;cursor:pointer}
 .browser iframe{flex:1;width:100%;border:0;background:#f1efe9}
 .demo-panel{height:620px}
+.notice ul{margin:14px 0 4px;padding:0;list-style:none}
+.notice li{padding:9px 0;border-top:1px solid var(--rule);font-size:14px;color:var(--ink-2)}
+.notice li b{color:var(--ink)}
 .tape-section{margin-top:36px}
 @media (max-width:1000px){.demo-grid{grid-template-columns:1fr}.browser{height:560px}.demo-panel{height:auto;max-height:520px}}
 @media (max-width:640px){.address .host{display:none}.browser{height:520px}}

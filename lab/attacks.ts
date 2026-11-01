@@ -124,7 +124,7 @@ export async function runAttackScenario(send: Transport, announce: (text: string
 
     phase(7);
     const HYDRA = 'Mozilla/4.0 (Hydra)';
-    const passwords = ['123456', 'password', 'admin', 'admin123', 'qwerty', 'cafe', 'nebula', 'nebula1', 'nebula123', 'tostadero',
+    const passwords = ['123456', 'password', 'admin', 'admin123', 'qwerty', 'cafe', 'nebula', 'nebula1', 'nebula123', 'cafeteria',
         'Nebula2025', 'nebula2025', 'welcome1', 'letmein', 'nebula2026'];
     for (const password of passwords) {
         await send({

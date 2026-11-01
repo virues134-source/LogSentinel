@@ -44,9 +44,9 @@ let currentPath = '/';
 
 /** Convierte lo que se escribe en la barra en una ruta, codificada como lo haría un navegador. */
 function toPath(input) {
-    let value = input.trim().replace(/^https?:\/\//i, '').replace(/^tostadero\.nebula/i, '');
+    let value = input.trim().replace(/^https?:\/\//i, '').replace(/^cafeter[ií]a\.nebula/i, '');
     if (!value.startsWith('/')) value = `/${value}`;
-    const url = new URL(value, 'http://tostadero.nebula');
+    const url = new URL(value, 'http://cafeteria.nebula');
     return url.pathname + url.search;
 }
 
@@ -151,6 +151,24 @@ function openReport() {
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+/* ---------- Aviso inicial (solo la primera visita) ---------- */
+
+function showNotice() {
+    const notice = document.getElementById('notice');
+    let seen = false;
+    try {
+        seen = localStorage.getItem('ls-demo-notice') === 'ok';
+    } catch {}
+    if (seen || !notice.showModal) return;
+    document.getElementById('notice-ok').addEventListener('click', () => notice.close());
+    notice.addEventListener('close', () => {
+        try {
+            localStorage.setItem('ls-demo-notice', 'ok');
+        } catch {}
+    });
+    notice.showModal();
+}
+
 /* ---------- Arranque ---------- */
 
 dashboard.handle({
@@ -167,3 +185,4 @@ dashboard.handle({
 });
 dashboard.setLive(true, 'En tu navegador');
 navigate('/', 'GET', undefined, { remember: false });
+showNotice();

@@ -6,7 +6,7 @@ Escrita en TypeScript sobre Node.js, **sin dependencias externas**.
 
 ### ▶ [Probar la demo en directo](https://virues134-source.github.io/LogSentinel/)
 
-La demo funciona entera en el navegador: una tienda ficticia, **Tostadero Nébula**, recibe visitas y ataques, y LogSentinel los detecta en el momento. Puedes navegar por la tienda, atacarla tú escribiendo en su barra de direcciones o pulsar «Simular ataque». No se envía ni se guarda ningún dato.
+La demo funciona entera en el navegador: una tienda ficticia, **Cafetería Nébula**, recibe visitas y ataques, y LogSentinel los detecta en el momento. Puedes navegar por la tienda, atacarla tú escribiendo en su barra de direcciones o pulsar «Simular ataque». No se envía ni se guarda ningún dato.
 
 ![Demo de LogSentinel después de una simulación](docs/demo.png)
 
@@ -166,9 +166,9 @@ LogSentinel es una herramienta **defensiva y educativa**: analiza logs que ya ti
 
 El simulador del laboratorio y de la demo solo envía peticiones a la tienda ficticia, dentro de tu propio equipo o de tu navegador. La tienda tiene fallos a propósito para la demostración: **no la publiques en internet**.
 
-**Tostadero Nébula es una empresa ficticia.** Cualquier parecido con un negocio real es casual. Las IPs de los atacantes pertenecen a los rangos reservados para documentación (RFC 5737) y no corresponden a nadie real. Los nombres de herramientas como Nikto, sqlmap o Hydra se usan solo para describir el tráfico que generan.
+**Cafetería Nébula es una empresa ficticia.** Cualquier parecido con un negocio real es casual. Las IPs de los atacantes pertenecen a los rangos reservados para documentación (RFC 5737) y no corresponden a nadie real. Los nombres de herramientas como Nikto, sqlmap o Hydra se usan solo para describir el tráfico que generan.
 
-**Privacidad:** la demo web se ejecuta entera en el navegador del visitante. No usa cookies, no tiene analítica y no envía ni almacena ningún dato.
+**Privacidad:** la demo web se ejecuta entera en el navegador del visitante. No usa cookies, no tiene analítica y no envía ningún dato; el navegador solo guarda, en local, si ya has visto el aviso inicial y si has plegado la explicación.
 
 ## Atribución
 

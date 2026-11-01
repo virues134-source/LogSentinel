@@ -88,7 +88,7 @@ Por eso `escapeHtml()` convierte `< > & " '` en entidades HTML, y además el inf
 
 `npm run lab` arranca tres piezas en un mismo proceso:
 
-1. **La tienda Tostadero Nébula** (`lab/shop.ts`, con la lógica en `lab/shop-core.ts`): un servidor web de verdad. Cada petición que recibe la apunta en `lab/logs/access.log` con el mismo formato que nginx. Puedes abrir ese fichero mientras navegas y ver cómo crece.
+1. **La tienda Cafetería Nébula** (`lab/shop.ts`, con la lógica en `lab/shop-core.ts`): un servidor web de verdad. Cada petición que recibe la apunta en `lab/logs/access.log` con el mismo formato que nginx. Puedes abrir ese fichero mientras navegas y ver cómo crece.
 2. **El monitor** (`src/live/`): sigue ese fichero como `tail -f`. Cada 300 ms mira si ha crecido, lee solo lo nuevo, lo convierte en eventos y vuelve a pasar las reglas. Comparando con la pasada anterior sabe qué alertas son nuevas y cuáles han subido de gravedad.
 3. **El panel** (`http://127.0.0.1:8090`): recibe cada línea y cada alerta por *Server-Sent Events*, una conexión que el servidor mantiene abierta para enviar datos al navegador en cuanto los tiene.
 

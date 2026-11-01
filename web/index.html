@@ -49,7 +49,7 @@
     <div class="explainer-body">
       <p>Todos los servidores apuntan en un fichero, llamado <b>log</b>, cada cosa que pasa: quién visita una página, quién intenta entrar, qué falla. <b>LogSentinel</b> lee ese fichero mientras se escribe y busca en él las huellas que dejan los ataques más habituales.</p>
       <ol class="steps">
-        <li><b>Una tienda ficticia.</b> A la izquierda tienes la web de Tostadero Nébula. Puedes navegar por ella o escribir direcciones en su barra. Cada visita se apunta en su log, como en un servidor real.</li>
+        <li><b>Una tienda ficticia.</b> A la izquierda tienes la web de Cafetería Nébula. Puedes navegar por ella o escribir direcciones en su barra. Cada visita se apunta en su log, como en un servidor real.</li>
         <li><b>LogSentinel la vigila.</b> Lee cada línea del log al momento y la compara con reglas que reconocen ataques: probar contraseñas sin parar, meter código en la dirección web, buscar ficheros privados…</li>
         <li><b>Si algo encaja, avisa.</b> La alerta aparece a la derecha con lo que significa, y el nivel de amenaza cambia de color. Pulsa «Simular ataque» para ver un ataque completo.</li>
       </ol>
@@ -65,12 +65,12 @@
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>
           </button>
           <label class="address">
-            <span class="host">tostadero.nebula</span>
+            <span class="host">cafeteria.nebula</span>
             <input id="address" name="address" spellcheck="false" aria-label="Dirección de la tienda" value="/">
           </label>
           <button class="go" type="submit">Ir</button>
         </form>
-        <iframe id="shop-frame" title="Tienda ficticia Tostadero Nébula" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
+        <iframe id="shop-frame" title="Tienda ficticia Cafetería Nébula" sandbox="allow-same-origin" referrerpolicy="no-referrer"></iframe>
       </div>
     </section>
 
@@ -112,14 +112,30 @@
   </section>
 
   <footer class="legal">
-    <p>Demo educativa. Todo se ejecuta en tu navegador: no se envía ni se guarda ningún dato. Tostadero Nébula es una empresa ficticia; las IPs de los atacantes pertenecen a rangos reservados para documentación (RFC 5737). MITRE ATT&amp;CK® es una marca registrada de The MITRE Corporation. Código bajo licencia MIT.</p>
+    <p>Demo educativa. Todo se ejecuta en tu navegador: no se envía ni se guarda ningún dato. Cafetería Nébula es una empresa ficticia; las IPs de los atacantes pertenecen a rangos reservados para documentación (RFC 5737). MITRE ATT&amp;CK® es una marca registrada de The MITRE Corporation. Código bajo licencia MIT.</p>
   </footer>
 </div>
+
+<dialog class="confirm notice" id="notice" aria-labelledby="notice-title">
+  <div class="confirm-body">
+    <h2 id="notice-title">Antes de empezar</h2>
+    <p>Esto es una <b>demostración educativa</b> de LogSentinel, una herramienta de ciberseguridad defensiva que detecta ataques leyendo los registros de un servidor.</p>
+    <ul>
+      <li><b>Cafetería Nébula es una empresa ficticia.</b> Su tienda tiene fallos de seguridad a propósito, para poder mostrar cómo se detectan.</li>
+      <li><b>Los ataques son simulados</b> y ocurren solo dentro de esta página. No se envía nada a ninguna web real.</li>
+      <li><b>No se recoge ningún dato tuyo:</b> sin cookies, sin analítica, sin servidor. Tu navegador solo recuerda que ya has visto este aviso.</li>
+      <li><b>Las técnicas que verás son reales.</b> Usarlas contra sistemas sin autorización es delito en España y en la mayoría de países. Practica solo en entornos propios o autorizados.</li>
+    </ul>
+  </div>
+  <div class="confirm-actions">
+    <button class="btn primary" id="notice-ok" type="button">Entendido</button>
+  </div>
+</dialog>
 
 <dialog class="confirm" id="confirm" aria-labelledby="confirm-title">
   <div class="confirm-body">
     <h2 id="confirm-title">Simular un ataque</h2>
-    <p>Durante un minuto, un simulador hará contra la tienda ficticia lo mismo que haría un atacante:</p>
+    <p>Un simulador hará contra la tienda ficticia lo mismo que haría un atacante, paso a paso:</p>
     <ol>
       <li>Visitas normales de clientes.</li>
       <li>Un escaneo automático en busca de páginas y ficheros ocultos.</li>

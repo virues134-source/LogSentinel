@@ -1,5 +1,5 @@
 /**
- * Lógica de la tienda ficticia "Tostadero Nébula", sin dependencias de Node.
+ * Lógica de la tienda ficticia "Cafetería Nébula", sin dependencias de Node.
  * La usan el servidor del laboratorio (lab/shop.ts) y la demo web, que la ejecuta
  * dentro del navegador. Así las dos generan exactamente las mismas respuestas y logs.
  */
@@ -21,7 +21,7 @@ export interface ShopResponse {
     location?: string;
 }
 
-export const SHOP_NAME = 'Tostadero Nébula';
+export const SHOP_NAME = 'Cafetería Nébula';
 
 const PRODUCTS = [
     { id: 1, origin: 'Etiopía', name: 'Yirgacheffe', price: '14,90 €', notes: 'Floral, bergamota y té negro.', region: 'Gedeo', altitude: '1.950 m', process: 'Lavado', roast: 'Claro', color: '#c9a227' },
