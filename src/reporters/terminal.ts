@@ -1,6 +1,7 @@
 import type { Report } from '../analyzer.ts';
 import type { Severity } from '../types.ts';
 import { formatDateTime, utcOffsetLabel } from '../time.ts';
+import { GUIDANCE } from '../guidance.ts';
 
 const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code: string, text: string) => (useColor ? `\x1b[${code}m${text}\x1b[0m` : text);
@@ -59,6 +60,9 @@ export function renderTerminal(report: Report): string {
             for (const line of f.evidence.slice(0, 3)) {
                 out.push(`     ${dim('│')} ${dim(line.length > 140 ? `${line.slice(0, 139)}…` : line)}`);
             }
+            const actions = GUIDANCE[f.rule]?.actions ?? [];
+            if (actions.length > 0) out.push(`     ${bold('Qué hacer')}`);
+            for (const action of actions) out.push(`     - ${action}`);
         });
     } else {
         out.push('');

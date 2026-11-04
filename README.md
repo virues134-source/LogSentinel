@@ -83,6 +83,8 @@ node src/cli.ts watch /var/log/nginx/access.log --dashboard 8090
 | `--min-severity <nivel>` | Filtra por gravedad mínima: `low`, `medium`, `high`, `critical` |
 | `--fail-on <nivel>` | Sale con código 2 si hay hallazgos de ese nivel o superior |
 | `--webhook <url>` | Envía los hallazgos en JSON a un webhook |
+| `--webhook-header <nombre>` | Cabecera de la clave del webhook (por defecto `X-Webhook-Key`) |
+| `--webhook-state <fichero>` | Recuerda lo ya avisado y envía solo los hallazgos nuevos |
 | `--config <fichero.json>` | Umbrales personalizados (ver `config.example.json`) |
 | `--year <año>` | Año para `auth.log`, que no lo incluye en las fechas |
 
@@ -111,21 +113,30 @@ LogSentinel envía un `POST` con este JSON al webhook indicado:
   "generatedAt": "2026-10-27T23:59:59.000Z",
   "totals": { "events": 725, "findings": 3, "bySeverity": { "critical": 3, "high": 0, "medium": 0, "low": 0 } },
   "topIps": [{ "ip": "203.0.113.45", "score": 10, "worst": "critical", "rules": ["ssh-brute-force"] }],
-  "findings": [{ "rule": "ssh-brute-force", "title": "Fuerza bruta contra SSH", "severity": "critical", "ip": "203.0.113.45", "description": "…" }]
+  "findings": [{ "rule": "ssh-brute-force", "title": "Fuerza bruta contra SSH", "severity": "critical", "ip": "203.0.113.45", "description": "…", "meaning": "…", "actions": ["Bloquear la IP en el firewall o con fail2ban.", "…"] }]
 }
 ```
 
+Con `--webhook-state`, `findings` trae solo lo nuevo, mientras que `totals` y `topIps` resumen todo el análisis.
+
 Un flujo mínimo en n8n:
 
-1. Nodo **Webhook** (método POST) y copiar su URL de producción.
-2. Nodo **Split Out** sobre el campo `findings`.
-3. Nodo **Telegram**, **Gmail** o **Slack** con un mensaje como `{{ $json.severity }} · {{ $json.title }} · {{ $json.ip }}`.
+1. Nodo **Webhook** (método POST) con **Authentication: Header Auth**. Crea la credencial con la cabecera `X-Webhook-Key` y una clave larga, y copia la URL de producción.
+2. Nodo **Split Out** sobre el campo `body.findings` (n8n guarda el JSON recibido dentro de `body`).
+3. Nodo **Telegram**, **Gmail** o **Slack** con un mensaje como `{{ $json.severity }} · {{ $json.title }} · {{ $json.ip }} · {{ $json.actions[0] }}`.
 
-Y programarlo en el servidor, por ejemplo cada hora con cron:
+> **Protege siempre el webhook.** Si queda abierto, cualquiera que conozca la URL puede colarte alertas falsas. Con Header Auth, n8n responde 403 a quien no tenga la clave.
+
+La clave se lee de la variable de entorno `LOGSENTINEL_WEBHOOK_KEY`, no de un argumento, para que no aparezca en `ps` ni en el historial. Solo se envía por `https` (o a tu propio equipo) y no se reenvía tras una redirección.
+
+Y programarlo en el servidor, por ejemplo cada hora con cron. `--webhook-state` evita recibir las mismas alertas cada vez:
 
 ```cron
-0 * * * * cd /opt/logsentinel && node src/cli.ts analyze /var/log/auth.log --min-severity high --webhook https://n8n.tudominio.com/webhook/logsentinel
+LOGSENTINEL_WEBHOOK_KEY=tu-clave-larga
+0 * * * * cd /opt/logsentinel && node src/cli.ts analyze /var/log/auth.log --min-severity high --webhook https://n8n.tudominio.com/webhook/logsentinel --webhook-state /var/lib/logsentinel/enviados.json
 ```
+
+El crontab guarda la clave en texto plano: úsalo solo en el crontab del usuario que ejecuta LogSentinel.
 
 ## Logs de ejemplo
 
@@ -137,7 +148,7 @@ Y programarlo en el servidor, por ejemplo cada hora con cron:
 npm test
 ```
 
-41 tests con el runner nativo de Node (`node:test`): parsers, cada regla de detección (incluidos casos que **no** deben alertar), escape del HTML, el modo en directo, la tienda del laboratorio y una prueba de extremo a extremo que lanza la simulación completa y comprueba que se detecta cada fase. Se ejecutan en cada push con GitHub Actions.
+51 tests con el runner nativo de Node (`node:test`): parsers, cada regla de detección (incluidos casos que **no** deben alertar), escape del HTML, el envío al webhook con clave, el modo en directo, la tienda del laboratorio y una prueba de extremo a extremo que lanza la simulación completa y comprueba que se detecta cada fase. Se ejecutan en cada push con GitHub Actions.
 
 ## Estructura
 

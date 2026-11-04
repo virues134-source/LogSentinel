@@ -105,7 +105,11 @@ export function createDashboard(options = {}) {
 
         story.append(meta, el('h3', '', finding.title), el('p', 'standfirst', finding.description));
         const guide = guidance[finding.rule];
-        if (guide) story.append(el('p', 'meaning', guide.meaning));
+        if (guide) {
+            const todo = el('ul', 'todo');
+            todo.append(...guide.actions.map((action) => el('li', '', action)));
+            story.append(el('p', 'meaning', guide.meaning), el('h4', 'todo-title', 'Qué hacer'), todo);
+        }
         const where = [finding.ip, finding.user ? `usuario ${finding.user}` : '', finding.mitre.map((m) => m.id).join(' · ')].filter(Boolean);
         story.append(el('p', 'source', where.join('   ')));
         return story;

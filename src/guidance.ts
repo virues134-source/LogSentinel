@@ -1,11 +1,15 @@
 /**
  * Explicación en lenguaje claro y acciones recomendadas para cada regla.
- * Lo usa el informe HTML para que se entienda sin conocimientos de seguridad.
+ * Acompaña a cada alerta en todas las salidas para que se entienda sin conocimientos de seguridad.
  */
+import type { Finding } from './types.ts';
+
 export interface Guidance {
     meaning: string;
     actions: string[];
 }
+
+export type FindingWithGuidance = Finding & Partial<Guidance>;
 
 export const GUIDANCE: Record<string, Guidance> = {
     'ssh-brute-force': {
@@ -114,3 +118,8 @@ export const GUIDANCE: Record<string, Guidance> = {
         ],
     },
 };
+
+/** Añade al hallazgo qué significa y qué hacer, para las salidas en JSON y los avisos. */
+export function withGuidance(finding: Finding): FindingWithGuidance {
+    return { ...finding, ...GUIDANCE[finding.rule] };
+}

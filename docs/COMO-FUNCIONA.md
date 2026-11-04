@@ -82,7 +82,7 @@ Por eso `escapeHtml()` convierte `< > & " '` en entidades HTML, y además el inf
 
 ## 5. Tests
 
-`npm test` ejecuta 41 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección. Además, una prueba de extremo a extremo lanza la simulación completa contra la tienda y comprueba que cada fase dispara su regla.
+`npm test` ejecuta 51 tests con el runner nativo de Node. No solo comprueban que las reglas detectan ataques; también que **no** alertan en casos legítimos (un usuario que falla una vez, búsquedas normales con apóstrofes como `l'oreal`, peticiones a `/favicon.ico`…). Los falsos positivos son el problema principal de cualquier sistema de detección. Además, una prueba de extremo a extremo lanza la simulación completa contra la tienda y comprueba que cada fase dispara su regla.
 
 ## 6. El laboratorio: cómo comprobar que no es inventado
 
@@ -122,6 +122,9 @@ Las firmas detectan ataques conocidos; un payload ofuscado de otra forma se esca
 
 **¿Cómo lo usarías en un servidor real?**
 Con cron cada hora, `--min-severity high` y `--webhook` hacia n8n, que reenvía la alerta a Telegram o correo. Con `--fail-on critical` también se puede integrar en un pipeline.
+
+**¿Cómo evitas alertas falsas o repetidas en el webhook?**
+El webhook de n8n lleva Header Auth: sin la clave responde 403, así que nadie puede colar alertas aunque conozca la URL. LogSentinel lee la clave de `LOGSENTINEL_WEBHOOK_KEY`, para que no quede en `ps` ni en el historial; se niega a enviarla por `http` a otra máquina, no sigue redirecciones y nunca la muestra en un error. Con `--webhook-state` guarda una huella de cada hallazgo avisado (regla, IP, usuario, inicio y gravedad), de modo que cron solo avisa de lo nuevo o de lo que ha subido de gravedad. La huella se guarda después de un envío correcto: si n8n está caído, se reintenta en la siguiente ejecución.
 
 **¿Qué es MITRE ATT&CK y por qué mapearlo?**
 Es un catálogo público de técnicas de ataque reales. Mapear cada alerta a una técnica permite hablar el mismo idioma que un SOC, comparar cobertura de detección y consultar mitigaciones conocidas.

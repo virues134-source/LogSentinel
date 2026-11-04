@@ -10,7 +10,7 @@ import type { Report } from './analyzer.ts';
 import { renderTerminal } from './reporters/terminal.ts';
 import { renderJson } from './reporters/json.ts';
 import { renderHtml } from './reporters/html.ts';
-import { sendWebhook } from './alerts.ts';
+import { filterUnsent, markSent, sendWebhook } from './alerts.ts';
 
 const HELP = `LogSentinel · detección de ataques en logs de SSH y servidores web
 
@@ -30,6 +30,9 @@ Opciones de analyze:
   --min-severity <nivel>      Muestra solo hallazgos de ese nivel o superior (low|medium|high|critical)
   --fail-on <nivel>           Sale con código 2 si hay hallazgos de ese nivel o superior (útil en CI/cron)
   --webhook <url>             Envía los hallazgos en JSON a un webhook (p. ej. n8n)
+  --webhook-header <nombre>   Cabecera de la clave del webhook (por defecto: X-Webhook-Key)
+                              La clave se lee de la variable LOGSENTINEL_WEBHOOK_KEY
+  --webhook-state <fichero>   Recuerda lo ya avisado y envía solo los hallazgos nuevos
   --config <fichero.json>     Umbrales de detección personalizados
   --year <año>                Año para auth.log con fechas sin año (por defecto: el actual)
   -h, --help                  Muestra esta ayuda
@@ -96,6 +99,8 @@ interface Options {
     minSeverity: Severity;
     failOn?: Severity;
     webhook?: string;
+    webhookHeader: string;
+    webhookState?: string;
     config?: string;
     year: number;
 }
@@ -111,7 +116,7 @@ export function parseArgs(argv: string[]): Options | null {
     const [command, ...rest] = argv;
     if (command !== 'analyze') throw new UsageError(`Comando desconocido: ${command}`);
 
-    const options: Options = { files: [], type: 'auto', format: 'table', minSeverity: 'low', year: new Date().getFullYear() };
+    const options: Options = { files: [], type: 'auto', format: 'table', minSeverity: 'low', webhookHeader: 'X-Webhook-Key', year: new Date().getFullYear() };
 
     for (let i = 0; i < rest.length; i++) {
         const arg = rest[i];
@@ -145,6 +150,13 @@ export function parseArgs(argv: string[]): Options | null {
             case '--webhook':
                 options.webhook = value;
                 break;
+            case '--webhook-header':
+                if (!/^[A-Za-z0-9-]+$/.test(value)) throw new UsageError(`--webhook-header no válido: ${value}`);
+                options.webhookHeader = value;
+                break;
+            case '--webhook-state':
+                options.webhookState = value;
+                break;
             case '--config':
                 options.config = value;
                 break;
@@ -158,6 +170,9 @@ export function parseArgs(argv: string[]): Options | null {
     }
 
     if (options.files.length === 0) throw new UsageError('Indica al menos un fichero de log.');
+    if (!options.webhook && (rest.includes('--webhook-header') || rest.includes('--webhook-state'))) {
+        throw new UsageError('--webhook-header y --webhook-state necesitan --webhook.');
+    }
     return options;
 }
 
@@ -260,9 +275,16 @@ export async function main(argv: string[]): Promise<number> {
             console.log(rendered);
         }
 
-        if (options.webhook && findings.length > 0) {
-            await sendWebhook(options.webhook, report, findings);
-            console.error(`Alerta enviada al webhook (${findings.length} hallazgos).`);
+        if (options.webhook) {
+            const pending = options.webhookState ? filterUnsent(findings, options.webhookState) : findings;
+            if (pending.length > 0) {
+                const key = process.env.LOGSENTINEL_WEBHOOK_KEY;
+                await sendWebhook(options.webhook, report, pending, key ? { header: options.webhookHeader, key } : undefined);
+                if (options.webhookState) markSent(pending, options.webhookState);
+                console.error(`Alerta enviada al webhook (${pending.length} hallazgos).`);
+            } else if (findings.length > 0) {
+                console.error('Sin hallazgos nuevos: no se envía nada al webhook.');
+            }
         }
 
         if (options.failOn && filterBySeverity(findings, options.failOn).length > 0) return 2;

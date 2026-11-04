@@ -1,6 +1,7 @@
 import type { AlertChange } from './monitor.ts';
 import type { Severity } from '../types.ts';
 import { formatClock } from '../time.ts';
+import { GUIDANCE } from '../guidance.ts';
 
 const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
 const paint = (code: string, text: string) => (useColor ? `\x1b[${code}m${text}\x1b[0m` : text);
@@ -11,5 +12,7 @@ export function formatAlert(change: AlertChange): string {
     const f = change.finding;
     const when = formatClock(f.lastSeen);
     const tag = change.kind === 'escalated' ? paint('1', ' ↑ sube de gravedad') : '';
-    return `${paint('2', when)} ${paint(STYLE[f.severity], ` ${f.severity.toUpperCase()} `)} ${paint('1', f.title)}${tag}\n         ${f.description}`;
+    const action = GUIDANCE[f.rule]?.actions[0];
+    const next = action ? `\n         ${paint('1', 'Qué hacer:')} ${action}` : '';
+    return `${paint('2', when)} ${paint(STYLE[f.severity], ` ${f.severity.toUpperCase()} `)} ${paint('1', f.title)}${tag}\n         ${f.description}${next}`;
 }

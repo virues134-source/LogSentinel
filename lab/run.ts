@@ -43,7 +43,7 @@ const stopTail = tailFile(logPath, (lines) => {
 });
 
 for (const server of [shop, dashboard.server]) {
-    server.on('error', (error: NodeJS.ErrnoException) => {
+    server.on('error', (error: NodeJS.ErrnoException & { port?: number }) => {
         console.error(error.code === 'EADDRINUSE'
             ? `El puerto ${error.port} ya está en uso. Cierra el otro programa o usa SHOP_PORT / PANEL_PORT.`
             : error.message);
